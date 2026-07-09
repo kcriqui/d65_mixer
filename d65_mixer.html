@@ -302,7 +302,8 @@
           <span class="preset-label">Preset</span>
           <button class="preset-btn" data-preset="rgbDiode">RGB diode</button>
           <button class="preset-btn" data-preset="rgbOPSL">RGB OPSL</button>
-          <button class="preset-btn" data-preset="allOPSL">All OPSL</button>
+          <button class="preset-btn" data-preset="allSTM">All STM</button>
+          <button class="preset-btn" data-preset="allMTM">All MTM</button>
         </div>
         <div class="controls">
           <div class="mode-toggle" role="tablist">
@@ -557,7 +558,8 @@ function instFromCatalog(cat, on){
 const PRESETS = {
   rgbDiode: ["Diode 460","Diode 520","Diode 638"],
   rgbOPSL:  ["OPSL 480 STM","OPSL 532 STM","OPSL 639 STM"],
-  allOPSL:  CATALOG.filter(c=>c.type==='OPSL').map(c=>c.name),
+  allSTM:   CATALOG.filter(c=>c.type==='OPSL' && c.mode==='STM').map(c=>c.name),
+  allMTM:   CATALOG.filter(c=>c.type==='OPSL' && c.mode==='MTM').map(c=>c.name),
 };
 function presetLasers(key){
   return (PRESETS[key]||[]).map(nm => instFromCatalog(CATALOG.find(c=>c.name===nm), true));
