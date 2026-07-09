@@ -532,19 +532,22 @@ let idc = 0;
 function instFromCatalog(cat, on){
   return { id:++idc, name:cat.name, type:cat.type, wl:cat.wl, diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, on:!!on };
 }
-// Default primaries: a mixed-technology RGB set plus a few spares (off by default)
+// Default primaries: a mixed-technology RGB white set, plus same-wavelength
+// pairs (off) to compare beam characteristics side by side.
 const DEFAULT_SETUP = [
-  ["Coherent Genesis MX488", true],
-  ["DPSS 532", true],
-  ["Diode 638", true],
+  ["Coherent Genesis MX488", true],     // 488 OPSL, TEM00 (STM)
+  ["Coherent Taipan 488 (MM)", false],  // 488 OPSL, multimode — compare
+  ["DPSS 532", true],                   // 532 DPSS
+  ["Coherent Genesis MX532", false],    // 532 OPSL — compare
+  ["Diode 638", true],                  // 638 red diode
   ["Diode 460", false],
-  ["Coherent Genesis MX561", false],
   ["Coherent Genesis MX577", false],
-  ["Diode 445", false],
 ];
 let lasers = DEFAULT_SETUP.map(([nm,on]) => instFromCatalog(CATALOG.find(c=>c.name===nm), on));
 const activeLasers = () => lasers.filter(l => l.on);
-function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl); }
+// Sort by wavelength; same-wavelength lasers group together by name (deterministic).
+function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || a.name.localeCompare(b.name)); }
+sortLasers();
 
 /* ---------- beam geometry ---------- */
 let mixMode = 'raw';   // 'raw' | 'beam'
