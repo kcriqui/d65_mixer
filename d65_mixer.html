@@ -119,13 +119,38 @@
 
   /* Laser list */
   .laser-row {
-    display: grid; grid-template-columns: 18px 18px 1fr auto; align-items: center;
-    gap: 10px; padding: 9px 0; border-top: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 11px 0; border-top: 1px solid var(--line);
   }
   .laser-row:first-of-type { border-top: none; }
   .laser-row.off { opacity: 0.5; }
-  .on-box { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
-  .laser-swatch { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--swatch-ring); }
+  .on-box { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; flex: none; }
+  .laser-swatch { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--swatch-ring); flex: none; }
+  .lr-head { display: flex; align-items: center; gap: 8px; }
+  .name-input {
+    flex: 1; min-width: 0; background: transparent; border: 1px solid transparent;
+    color: var(--text); border-radius: 6px; padding: 3px 5px; font-size: 13.5px; font-weight: 550;
+  }
+  .name-input:hover { border-color: var(--line); }
+  .name-input:focus { outline: none; border-color: var(--accent); background: var(--panel-2); }
+  .type-badge {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 5px;
+    border: 1px solid var(--line-strong); color: var(--muted); flex: none;
+  }
+  .type-badge.OPSL { color: #8fb7ff; border-color: #3a557f; }
+  .type-badge.Diode { color: #ff9d6e; border-color: #7f4a35; }
+  .type-badge.DPSS { color: #7fe0a0; border-color: #35704a; }
+  .lr-specs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 26px; }
+  .spec { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--faint); }
+  .spec-input {
+    width: 50px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    border-radius: 6px; padding: 3px 5px; font-size: 12px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
+  }
+  .spec-input.wl { width: 46px; }
+  .spec-input:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .spot-tag { font-size: 11px; color: var(--accent); margin-left: auto; white-space: nowrap; }
+  .spot-tag.muted { color: var(--faint); }
   .laser-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .laser-top { display: flex; align-items: center; gap: 8px; }
   .wl-input {
@@ -135,7 +160,7 @@
   }
   .wl-input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
   .wl-unit { font-size: 12px; color: var(--faint); }
-  .power-line { display: flex; align-items: center; gap: 8px; }
+  .power-line { display: flex; align-items: center; gap: 8px; padding-left: 26px; }
   .power-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
   .power-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.12s ease; }
   .power-val { font-size: 12px; color: var(--muted); min-width: 46px; text-align: right; }
@@ -146,11 +171,38 @@
   }
   .del-btn:hover { color: var(--bad); border-color: var(--bad); }
 
-  .ref-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 12.5px; color: var(--muted); }
-  .ref-row .wl-input { width: 66px; }
-  .ref-row .ref-note { color: var(--faint); font-size: 11.5px; margin-left: auto; text-align: right; }
   .power-val .w { color: var(--faint); }
   .laser-row .power-val.limit { color: var(--accent); font-weight: 600; }
+
+  /* Global mix controls */
+  .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .mode-toggle { display: flex; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 8px; padding: 3px; gap: 3px; }
+  .mode-toggle button {
+    flex: 1; padding: 7px 6px; border: none; background: none; cursor: pointer; border-radius: 6px;
+    font-size: 12.5px; font-weight: 550; color: var(--muted);
+  }
+  .mode-toggle button.active { background: var(--accent); color: #05201d; }
+  :root[data-theme="light"] .mode-toggle button.active, .mode-toggle button.active { color: #04211e; }
+  .ctrl-fields { display: flex; gap: 8px; }
+  .ctrl-field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .ctrl-field label { font-size: 11px; color: var(--faint); }
+  .ctrl-field .fld-in { display: flex; align-items: center; gap: 5px; }
+  .ctrl-field input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    border-radius: 7px; padding: 5px 7px; font-size: 13px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
+  }
+  .ctrl-field input:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .ctrl-field .u { font-size: 11px; color: var(--faint); flex: none; }
+  .mode-note { font-size: 11.5px; color: var(--faint); line-height: 1.45; }
+
+  .halo-note {
+    margin-top: 12px; font-size: 12px; line-height: 1.45; padding: 9px 11px; border-radius: 8px;
+    background: color-mix(in srgb, var(--warn) 12%, var(--panel-2)); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line));
+    color: var(--text);
+  }
+  .halo-note b { color: var(--warn); }
+  .halo-note.hidden { display: none; }
 
   /* Best subset finder */
   .finder-desc { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
@@ -170,8 +222,13 @@
   .finder-result .metrics { color: var(--faint); }
 
   .add-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .catalog-select {
+    flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    border-radius: 8px; padding: 8px 9px; font-size: 13px;
+  }
+  .catalog-select:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
   .add-btn {
-    flex: 1; padding: 8px 9px; border-radius: 8px; cursor: pointer;
+    flex: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;
     background: var(--panel-2); color: var(--text); border: 1px dashed var(--line-strong);
     font-size: 13.5px; font-weight: 550;
   }
@@ -198,7 +255,7 @@
   <header class="top">
     <div class="eyebrow">Laser Projector Color Lab</div>
     <h1>White Mixer &amp; Gamut Explorer — CIE 1931</h1>
-    <p>Add and edit laser wavelengths to find a blend that reads as perfect D65 white, and see the color gamut those primaries can reproduce. Drag points on the diagram or edit values on the right.</p>
+    <p>Build a set of real lasers — Coherent OPSL, diode, and DPSS — to find a blend that reads as perfect D65 white and see the gamut those primaries reproduce. Toggle beam-corrected power to account for each laser’s diameter and divergence at viewing distance.</p>
   </header>
 
   <div class="layout">
@@ -229,17 +286,28 @@
 
       <div class="card section">
         <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
-        <div class="ref-row">
-          <span>Limiting line</span>
-          <input class="wl-input mono" id="refW" type="number" min="0.01" step="0.1" value="1.0">
-          <span class="wl-unit">W optical</span>
-          <span class="ref-note">= 100% · others scaled for D65</span>
+        <div class="controls">
+          <div class="mode-toggle" role="tablist">
+            <button id="modeRaw" class="active" data-mode="raw">Raw power</button>
+            <button id="modeBeam" data-mode="beam">Beam-corrected</button>
+          </div>
+          <div class="ctrl-fields">
+            <div class="ctrl-field">
+              <label for="refW">Limiting line</label>
+              <div class="fld-in"><input id="refW" type="number" min="0.01" step="0.1" value="1.0"><span class="u">W</span></div>
+            </div>
+            <div class="ctrl-field">
+              <label for="viewDist">Viewing distance</label>
+              <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
+            </div>
+          </div>
+          <div class="mode-note" id="modeNote"></div>
         </div>
         <div id="laserList"></div>
+        <div class="halo-note hidden" id="haloNote"></div>
         <div class="add-row">
-          <input class="wl-input mono" id="addInput" type="number" min="400" max="700" step="1" placeholder="e.g. 515" value="515">
-          <span class="wl-unit">nm</span>
-          <button class="add-btn" id="addBtn">+ Add wavelength</button>
+          <select class="catalog-select" id="catalogSelect"></select>
+          <button class="add-btn" id="addBtn">+ Add</button>
         </div>
       </div>
 
@@ -265,7 +333,7 @@
   </div>
 
   <p class="foot">
-    Mixing is computed by summing CIE 1931 2° tristimulus values of each monochromatic line; the required blend is solved as non-negative optical powers that land the combined chromaticity on the D65 white point. The gamut is the convex hull of the primaries — coverage is the share of each standard gamut's area that falls inside it. Relative optical power is proportional to radiant watts per line.
+    Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the blend is solved as non-negative powers landing the combined chromaticity on D65. The gamut is the convex hull of the primaries. In <b>beam-corrected</b> mode the required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)², so a fatter or faster-diverging line needs more power for the same apparent brightness — this shifts which line is limiting but never the on-axis white point. Coherent Genesis MX / Taipan specs are from published datasheets; diode and DPSS beam figures are representative estimates. Beams are assumed co-aligned with spectrally neutral scattering.
   </p>
 </div>
 
@@ -419,13 +487,72 @@ function solveWhite(lasers){
   return {powers:P, mix, dist};
 }
 
+/* ---------- laser catalog ----------
+   Beam specs from Coherent datasheets (Genesis MX STM/SLM, Taipan HD & standard);
+   diode/DPSS are representative estimates. diam = beam diameter at aperture (mm, 1/e²),
+   diverg = full-angle divergence (mrad). */
+const CATALOG = [
+  // --- Coherent Genesis MX (OPSL, TEM00) — all MX share 1.0mm / 0.7mrad, M²<1.1 ---
+  { name:"Coherent Genesis MX460",  brand:"Coherent", type:"OPSL", wl:460, power_W:0.5, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX480",  brand:"Coherent", type:"OPSL", wl:480, power_W:0.5, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX488",  brand:"Coherent", type:"OPSL", wl:488, power_W:1.0, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX514",  brand:"Coherent", type:"OPSL", wl:514, power_W:1.0, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX532",  brand:"Coherent", type:"OPSL", wl:532, power_W:1.5, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX561",  brand:"Coherent", type:"OPSL", wl:561, power_W:0.5, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX577",  brand:"Coherent", type:"OPSL", wl:577, power_W:1.0, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX590",  brand:"Coherent", type:"OPSL", wl:590, power_W:1.0, diam:1.0, diverg:0.7, est:false },
+  { name:"Coherent Genesis MX607",  brand:"Coherent", type:"OPSL", wl:607, power_W:0.5, diam:1.0, diverg:1.5, est:false },
+  { name:"Coherent Genesis MX639",  brand:"Coherent", type:"OPSL", wl:639, power_W:1.0, diam:1.0, diverg:1.5, est:false },
+  // --- Coherent Taipan HD (OPSL, TEM00, diffraction-limited, lightshow) ---
+  { name:"Coherent Taipan HD 460",  brand:"Coherent", type:"OPSL", wl:460, power_W:2.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan HD 480",  brand:"Coherent", type:"OPSL", wl:480, power_W:2.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan HD 488",  brand:"Coherent", type:"OPSL", wl:488, power_W:3.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan HD 532",  brand:"Coherent", type:"OPSL", wl:532, power_W:5.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan HD 577",  brand:"Coherent", type:"OPSL", wl:577, power_W:3.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan HD 590",  brand:"Coherent", type:"OPSL", wl:590, power_W:2.0, diam:1.2, diverg:0.6, est:true },
+  { name:"Coherent Taipan 639 (red)",brand:"Coherent",type:"OPSL", wl:639, power_W:2.0, diam:1.5, diverg:1.5, est:true },
+  // --- Coherent Taipan standard (OPSL, multimode M²<6, high power) ---
+  { name:"Coherent Taipan 488 (MM)",brand:"Coherent", type:"OPSL", wl:488, power_W:5.0, diam:1.6, diverg:1.5, est:true },
+  { name:"Coherent Taipan 532 (MM)",brand:"Coherent", type:"OPSL", wl:532, power_W:10.0,diam:1.8, diverg:1.4, est:true },
+  { name:"Coherent Taipan 577 (MM)",brand:"Coherent", type:"OPSL", wl:577, power_W:6.0, diam:1.8, diverg:1.4, est:true },
+  // --- Generic diode lasers (estimated beam specs) ---
+  { name:"Diode 405",  brand:"Generic", type:"Diode", wl:405, power_W:0.3, diam:2.0, diverg:1.2, est:true },
+  { name:"Diode 445",  brand:"Generic", type:"Diode", wl:445, power_W:1.6, diam:3.0, diverg:1.5, est:true },
+  { name:"Diode 460",  brand:"Generic", type:"Diode", wl:460, power_W:1.0, diam:2.5, diverg:1.5, est:true },
+  { name:"Diode 520",  brand:"Generic", type:"Diode", wl:520, power_W:1.0, diam:2.0, diverg:1.5, est:true },
+  { name:"Diode 638",  brand:"Generic", type:"Diode", wl:638, power_W:0.7, diam:2.0, diverg:1.2, est:true },
+  { name:"Diode 660",  brand:"Generic", type:"Diode", wl:660, power_W:0.5, diam:2.0, diverg:1.2, est:true },
+  // --- Generic DPSS lasers (estimated beam specs) ---
+  { name:"DPSS 473",   brand:"Generic", type:"DPSS", wl:473, power_W:0.1, diam:1.5, diverg:1.2, est:true },
+  { name:"DPSS 532",   brand:"Generic", type:"DPSS", wl:532, power_W:0.1, diam:1.5, diverg:1.0, est:true },
+];
+
 /* ---------- state ---------- */
-const DEFAULT_WLS = [405,445,460,480,488,520,532,561,577,589,638,660];
-const DEFAULT_ON = new Set([488,532,638]);
 let idc = 0;
-let lasers = DEFAULT_WLS.map(wl => ({ wl, id: ++idc, on: DEFAULT_ON.has(wl) }));
+function instFromCatalog(cat, on){
+  return { id:++idc, name:cat.name, type:cat.type, wl:cat.wl, diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, on:!!on };
+}
+// Default primaries: a mixed-technology RGB set plus a few spares (off by default)
+const DEFAULT_SETUP = [
+  ["Coherent Genesis MX488", true],
+  ["DPSS 532", true],
+  ["Diode 638", true],
+  ["Diode 460", false],
+  ["Coherent Genesis MX561", false],
+  ["Coherent Genesis MX577", false],
+  ["Diode 445", false],
+];
+let lasers = DEFAULT_SETUP.map(([nm,on]) => instFromCatalog(CATALOG.find(c=>c.name===nm), on));
 const activeLasers = () => lasers.filter(l => l.on);
 function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl); }
+
+/* ---------- beam geometry ---------- */
+let mixMode = 'raw';   // 'raw' | 'beam'
+function viewDistM(){ return Math.max(0, parseFloat(document.getElementById('viewDist').value) || 0); }
+// spot diameter (mm) at distance z: d0 + z(m)·θ(mrad), since 1 mrad × 1 m = 1 mm
+function spotDia(l){ return l.diam + viewDistM() * l.diverg; }
+// geometry factor mapping on-axis amount → radiant watts (∝ spot area)
+function geomFactor(l){ return mixMode==='beam' ? spotDia(l)*spotDia(l) : 1; }
 
 /* ---------- canvas / rendering ---------- */
 const canvas = document.getElementById('cie');
@@ -570,6 +697,28 @@ function recompute(){
 
 /* ---------- UI: rail ---------- */
 const laserList = document.getElementById('laserList');
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function updateModeNote(){
+  const el=document.getElementById('modeNote');
+  el.innerHTML = mixMode==='beam'
+    ? 'Beam-corrected: required watts scale with spot area (Ø at distance)² — a fatter or faster-diverging line needs more power for the same apparent brightness.'
+    : 'Raw power: assumes identical beams. Switch to Beam-corrected to weight required watts by each laser’s diameter &amp; divergence.';
+}
+function updateHalo(){
+  const note=document.getElementById('haloNote');
+  const act=activeLasers(); const z=viewDistM();
+  if(mixMode!=='beam' || z<=0 || act.length<2){ note.classList.add('hidden'); return; }
+  let mn=Infinity,mx=-Infinity,mnL=null,mxL=null;
+  act.forEach(l=>{ const s=spotDia(l); if(s<mn){mn=s;mnL=l;} if(s>mx){mx=s;mxL=l;} });
+  const ratio = mx/Math.max(mn,1e-6);
+  if(ratio < 1.3){ note.classList.add('hidden'); return; }
+  note.classList.remove('hidden');
+  note.innerHTML = `<b>Colored halo likely.</b> At ${z} m the beams span Ø ${mn.toFixed(1)}–${mx.toFixed(1)} mm `
+    + `(${mxL.wl} nm widest, ${mnL.wl} nm tightest — ${((ratio-1)*100).toFixed(0)}% mismatch). `
+    + `White holds on-axis, but the ${mxL.wl} nm line over-fills the edges and tints the surrounding halo.`;
+}
+
 function renderRail(sol, hull, powerById, totalP){
   const nActive = activeLasers().length;
   document.getElementById('countPill').textContent = `${nActive} on · ${lasers.length}`;
@@ -600,38 +749,47 @@ function renderRail(sol, hull, powerById, totalP){
     detail.textContent='D65 lies outside these primaries — add or shift a line.';
   }
 
-  // laser rows — powers normalized so the most-demanding line = 100% (1.0)
-  const activeP = lasers.filter(l=>l.on).map(l=>powerById[l.id]||0);
-  const maxP = Math.max(1e-12, ...activeP);
+  // required watts per line = on-axis amount × geometry factor (spot area in beam mode)
+  const wattById = {}; let maxW = 1e-12;
+  lasers.forEach(l=>{ if(l.on){ const w=(powerById[l.id]||0)*geomFactor(l); wattById[l.id]=w; if(w>maxW) maxW=w; } });
   const refW = Math.max(0.001, parseFloat(document.getElementById('refW').value) || 1);
+  const z = viewDistM();
   laserList.innerHTML='';
   lasers.forEach((l)=>{
     const p = xyOfWavelength(l.wl);
-    const power = powerById[l.id] || 0;
-    const ratio = l.on ? power/maxP : 0;      // 0..1, limiting line = 1
+    const w = wattById[l.id] || 0;
+    const ratio = l.on ? w/maxW : 0;          // 0..1, limiting line = 1
     const pct = ratio*100;
     const watts = ratio*refW;
-    const isLimit = l.on && power >= maxP*0.9999;
-    const valHtml = l.on
-      ? `${pct.toFixed(0)}%<span class="w"> · ${watts.toFixed(2)} W</span>`
-      : '—';
+    const isLimit = l.on && w >= maxW*0.9999;
+    const valHtml = l.on ? `${pct.toFixed(0)}%<span class="w"> · ${watts.toFixed(2)} W</span>` : '—';
+    const spot = spotDia(l);
+    const spotHtml = (mixMode==='beam' && z>0)
+      ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
+      : `<span class="spot-tag muted" title="beam Ø at aperture">Ø ${l.diam.toFixed(1)} mm</span>`;
     const row=document.createElement('div'); row.className='laser-row' + (l.on ? '' : ' off');
     row.innerHTML = `
-      <input class="on-box" type="checkbox" data-on="${l.id}" ${l.on?'checked':''} title="Include in mix">
-      <div class="laser-swatch" style="background:${chromaToCss(p[0],p[1])}"></div>
-      <div class="laser-main">
-        <div class="laser-top">
-          <input class="wl-input mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}">
-          <span class="wl-unit">nm</span>
-          <span class="power-val mono${isLimit?' limit':''}" style="margin-left:auto">${valHtml}${isLimit?' ·max':''}</span>
-        </div>
-        <div class="power-line">
-          <div class="power-bar"><div class="power-fill" style="width:${pct.toFixed(1)}%"></div></div>
-        </div>
+      <div class="lr-head">
+        <input class="on-box" type="checkbox" data-on="${l.id}" ${l.on?'checked':''} title="Include in mix">
+        <div class="laser-swatch" style="background:${chromaToCss(p[0],p[1])}"></div>
+        <input class="name-input" type="text" value="${escAttr(l.name)}" data-id="${l.id}" data-field="name" title="Laser name">
+        <span class="type-badge ${l.type}">${l.type}</span>
+        <button class="del-btn" data-del="${l.id}" title="Remove">×</button>
       </div>
-      <button class="del-btn" data-del="${l.id}" title="Remove">×</button>`;
+      <div class="lr-specs">
+        <span class="spec">λ <input class="spec-input wl mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}" data-field="wl"> nm</span>
+        <span class="spec">Ø <input class="spec-input mono" type="number" min="0.1" step="0.1" value="${l.diam}" data-id="${l.id}" data-field="diam"> mm</span>
+        <span class="spec">div <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.diverg}" data-id="${l.id}" data-field="diverg"> mrad</span>
+        ${spotHtml}
+      </div>
+      <div class="power-line">
+        <div class="power-bar"><div class="power-fill" style="width:${pct.toFixed(1)}%"></div></div>
+        <span class="power-val mono${isLimit?' limit':''}">${valHtml}${isLimit?' ·max':''}</span>
+      </div>`;
     laserList.appendChild(row);
   });
+  updateHalo();
+  updateModeNote();
 
   // coverage
   const cov=document.getElementById('coverage'); cov.innerHTML='';
@@ -657,29 +815,54 @@ laserList.addEventListener('change', e=>{
     if(l){ l.on=e.target.checked; recompute(); }
     return;
   }
-  const id=+e.target.dataset.id;
-  if(id && e.target.classList.contains('wl-input')){
-    let v=Math.round(+e.target.value);
-    if(!isFinite(v)){ recompute(); return; }
-    v=Math.max(400, Math.min(700, v));
-    const l=lasers.find(x=>x.id===id);
-    if(l){ l.wl=v; sortLasers(); recompute(); }
-  }
+  const id=+e.target.dataset.id, field=e.target.dataset.field;
+  if(!id || !field) return;
+  const l=lasers.find(x=>x.id===id); if(!l) return;
+  if(field==='name'){ l.name=e.target.value.trim()||l.name; recompute(); return; }
+  let v=parseFloat(e.target.value);
+  if(!isFinite(v)){ recompute(); return; }
+  if(field==='wl'){ l.wl=Math.max(400,Math.min(700,Math.round(v))); sortLasers(); }
+  else if(field==='diam'){ l.diam=Math.max(0.05,v); }
+  else if(field==='diverg'){ l.diverg=Math.max(0,v); }
+  recompute();
 });
 laserList.addEventListener('click', e=>{
   const del=e.target.dataset.del;
   if(del){ lasers=lasers.filter(x=>x.id!==+del); recompute(); }
 });
-function addWavelength(){
-  const inp=document.getElementById('addInput');
-  let v=Math.round(+inp.value);
-  if(!isFinite(v)) return;
-  v=Math.max(400, Math.min(700, v));
-  lasers.push({wl:v, id:++idc, on:true}); sortLasers(); recompute();
+
+// catalog picker
+function populateCatalog(){
+  const sel=document.getElementById('catalogSelect');
+  const order=['OPSL','Diode','DPSS']; let html='';
+  order.forEach(type=>{
+    html+=`<optgroup label="${type}">`;
+    CATALOG.forEach((c,i)=>{ if(c.type===type) html+=`<option value="${i}">${escAttr(c.name)} — ${c.wl} nm · ${c.power_W} W</option>`; });
+    html+='</optgroup>';
+  });
+  html+='<optgroup label="Custom"><option value="custom">Custom laser…</option></optgroup>';
+  sel.innerHTML=html;
 }
-document.getElementById('addBtn').addEventListener('click', addWavelength);
-document.getElementById('addInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addWavelength(); } });
+function addFromCatalog(){
+  const val=document.getElementById('catalogSelect').value;
+  if(val==='custom'){
+    lasers.push({id:++idc, name:'Custom laser', type:'Diode', wl:550, diam:2.0, diverg:1.0, power_W:1.0, on:true});
+  } else {
+    const cat=CATALOG[+val]; if(!cat) return;
+    lasers.push(instFromCatalog(cat, true));
+  }
+  sortLasers(); recompute();
+}
+document.getElementById('addBtn').addEventListener('click', addFromCatalog);
 document.getElementById('refW').addEventListener('input', ()=>recompute());
+document.getElementById('viewDist').addEventListener('input', ()=>recompute());
+document.querySelectorAll('.mode-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    mixMode=b.dataset.mode;
+    document.querySelectorAll('.mode-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    recompute();
+  });
+});
 
 /* ---------- best subset finder ---------- */
 const WHITE_TOL = 0.003;      // xy distance considered "white"
@@ -795,6 +978,7 @@ mq.addEventListener && mq.addEventListener('change', ()=>recompute());
 new MutationObserver(()=>recompute()).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>{ setupCanvas(); recompute(); }, 120); });
 
+populateCatalog();
 setupCanvas();
 recompute();
 </script>
