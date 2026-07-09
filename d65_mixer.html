@@ -176,6 +176,16 @@
   .power-val .w { color: var(--faint); }
   .laser-row .power-val.limit { color: var(--accent); font-weight: 600; }
 
+  /* Presets */
+  .preset-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .preset-label { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); margin-right: 2px; }
+  .preset-btn {
+    padding: 6px 11px; border-radius: 999px; cursor: pointer; font-size: 12.5px; font-weight: 550;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--line-strong);
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .preset-btn.active { background: var(--accent); color: #05201d; border-color: var(--accent); }
+
   /* Global mix controls */
   .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
   .mode-toggle { display: flex; background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 8px; padding: 3px; gap: 3px; }
@@ -288,6 +298,12 @@
 
       <div class="card section">
         <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
+        <div class="preset-row">
+          <span class="preset-label">Preset</span>
+          <button class="preset-btn" data-preset="rgbDiode">RGB diode</button>
+          <button class="preset-btn" data-preset="rgbOPSL">RGB OPSL</button>
+          <button class="preset-btn" data-preset="allOPSL">All OPSL</button>
+        </div>
         <div class="controls">
           <div class="mode-toggle" role="tablist">
             <button id="modeRaw" class="active" data-mode="raw">Raw power</button>
@@ -535,18 +551,16 @@ function instFromCatalog(cat, on){
   return { id:++idc, name:cat.name, type:cat.type, mode:cat.mode, wl:cat.wl,
            diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, est:cat.est, on:!!on };
 }
-// Default primaries: a mixed-technology RGB white set, plus same-wavelength
-// pairs (off) to compare beam characteristics side by side.
-const DEFAULT_SETUP = [
-  ["Coherent MX / Taipan HD 488", true],  // 488 OPSL, TEM00
-  ["Coherent Taipan 488 MM", false],      // 488 OPSL, multimode — compare
-  ["DPSS 532", true],                     // 532 DPSS
-  ["Coherent MX / Taipan HD 532", false], // 532 OPSL — compare
-  ["Diode 638", true],                    // 638 red diode
-  ["Diode 460", false],
-  ["Coherent MX / Taipan HD 577", false],
-];
-let lasers = DEFAULT_SETUP.map(([nm,on]) => instFromCatalog(CATALOG.find(c=>c.name===nm), on));
+// Preset laser sets (by catalog name), applied via the preset buttons.
+const PRESETS = {
+  rgbDiode: ["Diode 460","Diode 520","Diode 638"],
+  rgbOPSL:  ["Coherent MX / Taipan HD 480","Coherent MX / Taipan HD 532","Coherent MX639 / Taipan red"],
+  allOPSL:  CATALOG.filter(c=>c.type==='OPSL').map(c=>c.name),
+};
+function presetLasers(key){
+  return (PRESETS[key]||[]).map(nm => instFromCatalog(CATALOG.find(c=>c.name===nm), true));
+}
+let lasers = presetLasers('rgbDiode');   // default preset
 const activeLasers = () => lasers.filter(l => l.on);
 // Sort by wavelength; same-wavelength lasers group together by name (deterministic).
 function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || a.name.localeCompare(b.name)); }
@@ -818,6 +832,7 @@ function renderRail(sol, hull, powerById, totalP){
 
 /* ---------- events ---------- */
 laserList.addEventListener('change', e=>{
+  clearPreset();
   if(e.target.classList.contains('on-box')){
     const l=lasers.find(x=>x.id===+e.target.dataset.on);
     if(l){ l.on=e.target.checked; recompute(); }
@@ -836,7 +851,7 @@ laserList.addEventListener('change', e=>{
 });
 laserList.addEventListener('click', e=>{
   const del=e.target.dataset.del;
-  if(del){ lasers=lasers.filter(x=>x.id!==+del); recompute(); }
+  if(del){ clearPreset(); lasers=lasers.filter(x=>x.id!==+del); recompute(); }
 });
 
 // catalog picker
@@ -852,6 +867,7 @@ function populateCatalog(){
   sel.innerHTML=html;
 }
 function addFromCatalog(){
+  clearPreset();
   const val=document.getElementById('catalogSelect').value;
   if(val==='custom'){
     lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, est:true, on:true});
@@ -870,6 +886,20 @@ document.querySelectorAll('.mode-toggle button').forEach(b=>{
     document.querySelectorAll('.mode-toggle button').forEach(x=>x.classList.toggle('active', x===b));
     recompute();
   });
+});
+
+// presets
+function setActivePreset(key){
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b.dataset.preset===key));
+}
+function clearPreset(){ document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active')); }
+function applyPreset(key){
+  lasers = presetLasers(key);
+  sortLasers(); recompute();
+  setActivePreset(key);
+}
+document.querySelectorAll('.preset-btn').forEach(b=>{
+  b.addEventListener('click', ()=>applyPreset(b.dataset.preset));
 });
 
 /* ---------- best subset finder ---------- */
@@ -987,6 +1017,7 @@ new MutationObserver(()=>recompute()).observe(document.documentElement, {attribu
 let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>{ setupCanvas(); recompute(); }, 120); });
 
 populateCatalog();
+setActivePreset('rgbDiode');
 setupCanvas();
 recompute();
 </script>
