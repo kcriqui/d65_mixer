@@ -1,0 +1,800 @@
+<title>Laser White Mixer — CIE 1931</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --panel: #151a24;
+    --panel-2: #1b212d;
+    --line: #252c3a;
+    --line-strong: #333c4e;
+    --text: #e7eaf2;
+    --muted: #8b93a8;
+    --faint: #5b6478;
+    --accent: #37e0cf;
+    --accent-dim: #1c7a72;
+    --good: #46d17f;
+    --warn: #f5b23d;
+    --bad: #ff5d6c;
+    --swatch-ring: rgba(255,255,255,0.25);
+    --grid: rgba(255,255,255,0.06);
+    --diagram-bg: #10141c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f6;
+      --panel: #ffffff;
+      --panel-2: #f4f6fa;
+      --line: #e0e4ec;
+      --line-strong: #cdd3de;
+      --text: #1a2030;
+      --muted: #626b7e;
+      --faint: #969db0;
+      --accent: #0f9e91;
+      --accent-dim: #8fe3db;
+      --good: #1f9d5b;
+      --warn: #c98314;
+      --bad: #d83a49;
+      --swatch-ring: rgba(0,0,0,0.18);
+      --grid: rgba(0,0,0,0.07);
+      --diagram-bg: #f7f9fc;
+      --shadow: 0 1px 2px rgba(20,30,60,0.06), 0 10px 30px rgba(20,30,60,0.08);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f14; --panel: #151a24; --panel-2: #1b212d; --line: #252c3a;
+    --line-strong: #333c4e; --text: #e7eaf2; --muted: #8b93a8; --faint: #5b6478;
+    --accent: #37e0cf; --accent-dim: #1c7a72; --good: #46d17f; --warn: #f5b23d;
+    --bad: #ff5d6c; --swatch-ring: rgba(255,255,255,0.25); --grid: rgba(255,255,255,0.06);
+    --diagram-bg: #10141c; --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f6; --panel: #ffffff; --panel-2: #f4f6fa; --line: #e0e4ec;
+    --line-strong: #cdd3de; --text: #1a2030; --muted: #626b7e; --faint: #969db0;
+    --accent: #0f9e91; --accent-dim: #8fe3db; --good: #1f9d5b; --warn: #c98314;
+    --bad: #d83a49; --swatch-ring: rgba(0,0,0,0.18); --grid: rgba(0,0,0,0.07);
+    --diagram-bg: #f7f9fc; --shadow: 0 1px 2px rgba(20,30,60,0.06), 0 10px 30px rgba(20,30,60,0.08);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 26px 22px 60px; }
+
+  header.top { margin-bottom: 22px; }
+  header.top .eyebrow {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 6px;
+  }
+  header.top h1 {
+    font-size: clamp(22px, 3.4vw, 30px); margin: 0 0 6px; font-weight: 650;
+    letter-spacing: -0.01em; text-wrap: balance;
+  }
+  header.top p { margin: 0; color: var(--muted); max-width: 62ch; font-size: 14.5px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: 22px; align-items: start; }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; box-shadow: var(--shadow);
+  }
+  .diagram-card { padding: 14px; }
+  .diagram-wrap { position: relative; width: 100%; }
+  canvas { display: block; width: 100%; height: auto; border-radius: 8px; cursor: crosshair; touch-action: none; }
+  .diagram-hint { margin-top: 8px; font-size: 12px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+
+  .rail { display: flex; flex-direction: column; gap: 16px; }
+
+  .section { padding: 16px 16px 17px; }
+  .section h2 {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin: 0 0 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* Status */
+  .status { display: flex; align-items: center; gap: 14px; }
+  .status-swatch {
+    width: 58px; height: 58px; border-radius: 10px; flex: none;
+    box-shadow: inset 0 0 0 1px var(--swatch-ring);
+    background: #fff;
+  }
+  .status-text .verdict { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .status-text .verdict.ok { color: var(--good); }
+  .status-text .verdict.near { color: var(--warn); }
+  .status-text .verdict.off { color: var(--bad); }
+  .status-text .detail { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .pill {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; padding: 2px 8px;
+    border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted);
+  }
+
+  /* Laser list */
+  .laser-row {
+    display: grid; grid-template-columns: 18px 18px 1fr auto; align-items: center;
+    gap: 10px; padding: 9px 0; border-top: 1px solid var(--line);
+  }
+  .laser-row:first-of-type { border-top: none; }
+  .laser-row.off { opacity: 0.5; }
+  .on-box { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+  .laser-swatch { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--swatch-ring); }
+  .laser-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .laser-top { display: flex; align-items: center; gap: 8px; }
+  .wl-input {
+    width: 74px; background: var(--panel-2); border: 1px solid var(--line-strong);
+    color: var(--text); border-radius: 7px; padding: 5px 7px; font-size: 14px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
+  }
+  .wl-input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+  .wl-unit { font-size: 12px; color: var(--faint); }
+  .power-line { display: flex; align-items: center; gap: 8px; }
+  .power-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+  .power-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.12s ease; }
+  .power-val { font-size: 12px; color: var(--muted); min-width: 46px; text-align: right; }
+  .del-btn {
+    background: none; border: 1px solid var(--line); color: var(--faint); cursor: pointer;
+    width: 26px; height: 26px; border-radius: 7px; font-size: 15px; line-height: 1;
+    display: grid; place-items: center;
+  }
+  .del-btn:hover { color: var(--bad); border-color: var(--bad); }
+
+  .ref-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 12.5px; color: var(--muted); }
+  .ref-row .wl-input { width: 66px; }
+  .ref-row .ref-note { color: var(--faint); font-size: 11.5px; margin-left: auto; text-align: right; }
+  .power-val .w { color: var(--faint); }
+  .laser-row .power-val.limit { color: var(--accent); font-weight: 600; }
+
+  /* Best subset finder */
+  .finder-desc { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
+  .finder-btns { display: flex; gap: 8px; }
+  .find-btn {
+    flex: 1; padding: 9px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 550;
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line-strong);
+  }
+  .find-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .find-btn:active { transform: translateY(1px); }
+  .finder-result {
+    margin-top: 12px; font-size: 12.5px; color: var(--muted); line-height: 1.5;
+    padding: 10px 12px; background: var(--panel-2); border-radius: 8px; border: 1px solid var(--line);
+  }
+  .finder-result .win { color: var(--text); font-weight: 600; }
+  .finder-result .win.none { color: var(--warn); }
+  .finder-result .metrics { color: var(--faint); }
+
+  .add-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .add-btn {
+    flex: 1; padding: 8px 9px; border-radius: 8px; cursor: pointer;
+    background: var(--panel-2); color: var(--text); border: 1px dashed var(--line-strong);
+    font-size: 13.5px; font-weight: 550;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Coverage */
+  .cov-row { display: grid; grid-template-columns: 92px 1fr 50px; align-items: center; gap: 10px; padding: 7px 0; }
+  .cov-name { font-size: 12.5px; color: var(--text); }
+  .cov-name small { color: var(--faint); font-size: 11px; }
+  .cov-bar { height: 7px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .cov-fill { height: 100%; border-radius: 4px; }
+  .cov-val { font-size: 12.5px; text-align: right; color: var(--muted); }
+
+  .readout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .ro { display: flex; flex-direction: column; }
+  .ro .k { font-size: 11px; color: var(--faint); letter-spacing: 0.02em; }
+  .ro .v { font-size: 14.5px; }
+
+  .foot { margin-top: 22px; font-size: 12px; color: var(--faint); max-width: 70ch; }
+  a.link { color: var(--accent); text-decoration: none; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Laser Projector Color Lab</div>
+    <h1>White Mixer &amp; Gamut Explorer — CIE 1931</h1>
+    <p>Add and edit laser wavelengths to find a blend that reads as perfect D65 white, and see the color gamut those primaries can reproduce. Drag points on the diagram or edit values on the right.</p>
+  </header>
+
+  <div class="layout">
+    <div class="card diagram-card">
+      <div class="diagram-wrap">
+        <canvas id="cie" width="720" height="760"></canvas>
+      </div>
+      <div class="diagram-hint">
+        <span>◇ drag a laser point along the spectral edge · ● D65 target · shaded area = reproducible gamut</span>
+      </div>
+    </div>
+
+    <div class="rail">
+      <div class="card section" id="statusCard">
+        <h2>White Mix <span class="pill" id="targetPill">target · D65</span></h2>
+        <div class="status">
+          <div class="status-swatch" id="mixSwatch"></div>
+          <div class="status-text">
+            <div class="verdict" id="verdict">—</div>
+            <div class="detail" id="verdictDetail">—</div>
+          </div>
+        </div>
+        <div class="readout-grid" style="margin-top:14px;">
+          <div class="ro"><span class="k">Mix chromaticity</span><span class="v mono" id="mixXY">—</span></div>
+          <div class="ro"><span class="k">Distance to D65</span><span class="v mono" id="mixDist">—</span></div>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
+        <div class="ref-row">
+          <span>Limiting line</span>
+          <input class="wl-input mono" id="refW" type="number" min="0.01" step="0.1" value="1.0">
+          <span class="wl-unit">W optical</span>
+          <span class="ref-note">= 100% · others scaled for D65</span>
+        </div>
+        <div id="laserList"></div>
+        <div class="add-row">
+          <input class="wl-input mono" id="addInput" type="number" min="400" max="700" step="1" placeholder="e.g. 515" value="515">
+          <span class="wl-unit">nm</span>
+          <button class="add-btn" id="addBtn">+ Add wavelength</button>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h2>Best Subset Finder</h2>
+        <p class="finder-desc">Search every listed wavelength for the combination that reaches D65 white.</p>
+        <div class="finder-btns">
+          <button class="find-btn" data-mode="fewest">Fewest lines</button>
+          <button class="find-btn" data-mode="widest">Widest gamut</button>
+        </div>
+        <div class="finder-result" id="finderResult">Pick a goal above — the winning lines are selected automatically.</div>
+      </div>
+
+      <div class="card section">
+        <h2>Gamut Coverage</h2>
+        <div id="coverage"></div>
+        <div class="readout-grid" style="margin-top:12px;">
+          <div class="ro"><span class="k">Gamut area (xy)</span><span class="v mono" id="gamutArea">—</span></div>
+          <div class="ro"><span class="k">Primaries used</span><span class="v mono" id="primCount">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    Mixing is computed by summing CIE 1931 2° tristimulus values of each monochromatic line; the required blend is solved as non-negative optical powers that land the combined chromaticity on the D65 white point. The gamut is the convex hull of the primaries — coverage is the share of each standard gamut's area that falls inside it. Relative optical power is proportional to radiant watts per line.
+  </p>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- CIE 1931 2° color matching functions, 380–780 nm @ 5 nm ---------- */
+const CMF_START = 380, CMF_STEP = 5;
+const XBAR = [0.001368,0.002236,0.004243,0.007650,0.014310,0.023190,0.043510,0.077630,0.134380,0.214770,0.283900,0.328500,0.348280,0.348060,0.336200,0.318700,0.290800,0.251100,0.195360,0.142100,0.095640,0.057950,0.032010,0.014700,0.004900,0.002400,0.009300,0.029100,0.063270,0.109600,0.165500,0.225750,0.290400,0.359700,0.433450,0.512050,0.594500,0.678400,0.762100,0.842500,0.916300,0.978600,1.026300,1.056700,1.062200,1.045600,1.002600,0.938400,0.854450,0.751400,0.642400,0.541900,0.447900,0.360800,0.283500,0.218700,0.164900,0.121200,0.087400,0.063600,0.046770,0.032900,0.022700,0.015840,0.011359,0.008111,0.005790,0.004109,0.002899,0.002049,0.001440,0.001000,0.000690,0.000476,0.000332,0.000235,0.000166,0.000117,0.000083,0.000059,0.000042];
+const YBAR = [0.000039,0.000064,0.000120,0.000217,0.000396,0.000640,0.001210,0.002180,0.004000,0.007300,0.011600,0.016840,0.023000,0.029800,0.038000,0.048000,0.060000,0.073900,0.090980,0.112600,0.139020,0.169300,0.208020,0.258600,0.323000,0.407300,0.503000,0.608200,0.710000,0.793200,0.862000,0.914850,0.954000,0.980300,0.994950,1.000000,0.995000,0.978600,0.952000,0.915400,0.870000,0.816300,0.757000,0.694900,0.631000,0.566800,0.503000,0.441200,0.381000,0.321000,0.265000,0.217000,0.175000,0.138200,0.107000,0.081600,0.061000,0.044580,0.032000,0.023200,0.017000,0.011920,0.008210,0.005723,0.004102,0.002929,0.002091,0.001484,0.001047,0.000740,0.000520,0.000361,0.000249,0.000172,0.000120,0.000085,0.000060,0.000042,0.000030,0.000021,0.000015];
+const ZBAR = [0.006450,0.010550,0.020050,0.036210,0.067850,0.110200,0.207400,0.371300,0.645600,1.039050,1.385600,1.622960,1.747060,1.782600,1.772110,1.744100,1.669200,1.528100,1.287640,1.041900,0.812950,0.616200,0.465180,0.353300,0.272000,0.212300,0.158200,0.111700,0.078250,0.057250,0.042160,0.029840,0.020300,0.013400,0.008750,0.005750,0.003900,0.002750,0.002100,0.001800,0.001650,0.001400,0.001100,0.001000,0.000800,0.000600,0.000340,0.000240,0.000190,0.000100,0.000050,0.000030,0.000020,0.000010,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+
+function cmfAt(wl) {
+  if (wl <= CMF_START) return [XBAR[0], YBAR[0], ZBAR[0]];
+  const maxWl = CMF_START + CMF_STEP * (XBAR.length - 1);
+  if (wl >= maxWl) return [XBAR[XBAR.length-1], YBAR[YBAR.length-1], ZBAR[ZBAR.length-1]];
+  const f = (wl - CMF_START) / CMF_STEP, i = Math.floor(f), t = f - i;
+  return [
+    XBAR[i] + t * (XBAR[i+1] - XBAR[i]),
+    YBAR[i] + t * (YBAR[i+1] - YBAR[i]),
+    ZBAR[i] + t * (ZBAR[i+1] - ZBAR[i]),
+  ];
+}
+function xyOfWavelength(wl) {
+  const [X,Y,Z] = cmfAt(wl), s = X+Y+Z;
+  return s > 0 ? [X/s, Y/s] : [0,0];
+}
+
+/* Spectral locus polygon (for containment + drawing), 380–700 nm */
+const LOCUS = [];
+for (let wl = 380; wl <= 700; wl += 2) LOCUS.push(xyOfWavelength(wl));
+
+/* ---------- color science helpers ---------- */
+const D65 = [0.31271, 0.32902];
+
+function xyYtoRGB(x, y, Y) {
+  if (y <= 1e-6) return [0,0,0];
+  const X = (x/y)*Y, Z = ((1-x-y)/y)*Y;
+  let r =  3.2406*X - 1.5372*Y - 0.4986*Z;
+  let g = -0.9689*X + 1.8758*Y + 0.0415*Z;
+  let b =  0.0557*X - 0.2040*Y + 1.0570*Z;
+  return [r,g,b];
+}
+function gammaEnc(c){ c = Math.max(0, Math.min(1, c)); return c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(c,1/2.4)-0.055; }
+
+// Vivid display color for a chromaticity (normalize to brightest channel)
+function chromaToCss(x, y) {
+  let [r,g,b] = xyYtoRGB(x, y, 1.0);
+  r=Math.max(0,r); g=Math.max(0,g); b=Math.max(0,b);
+  const m = Math.max(r,g,b) || 1;
+  r/=m; g/=m; b/=m;
+  return `rgb(${Math.round(gammaEnc(r)*255)},${Math.round(gammaEnc(g)*255)},${Math.round(gammaEnc(b)*255)})`;
+}
+// Faithful (not renormalized) color for a mix — white stays white
+function mixToCss(x, y) {
+  let [r,g,b] = xyYtoRGB(x, y, 1.0);
+  r=Math.max(0,r); g=Math.max(0,g); b=Math.max(0,b);
+  const m = Math.max(r,g,b,1);
+  return `rgb(${Math.round(gammaEnc(r/m)*255)},${Math.round(gammaEnc(g/m)*255)},${Math.round(gammaEnc(b/m)*255)})`;
+}
+
+/* ---------- geometry ---------- */
+function convexHull(pts) {
+  if (pts.length < 3) return pts.slice();
+  const p = pts.slice().sort((a,b)=> a[0]-b[0] || a[1]-b[1]);
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[]; for(const q of p){ while(lo.length>=2 && cross(lo[lo.length-2],lo[lo.length-1],q)<=0) lo.pop(); lo.push(q);}
+  const up=[]; for(let i=p.length-1;i>=0;i--){const q=p[i]; while(up.length>=2 && cross(up[up.length-2],up[up.length-1],q)<=0) up.pop(); up.push(q);}
+  lo.pop(); up.pop();
+  return lo.concat(up); // CCW
+}
+function polyArea(poly){ let a=0; for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length]; a+=p[0]*q[1]-q[0]*p[1];} return Math.abs(a)/2; }
+function pointInPoly(pt, poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>pt[1])!==(yj>pt[1])) && (pt[0] < (xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+// Clip subject polygon by convex clip polygon (Sutherland–Hodgman)
+function clipPoly(subject, clip){
+  if(clip.length<3) return [];
+  let out=subject.slice();
+  const inside=(p,a,b)=>((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]))>=0;
+  const inter=(a,b,c,d)=>{const A=[b[0]-a[0],b[1]-a[1]],B=[d[0]-c[0],d[1]-c[1]];
+    const den=A[0]*B[1]-A[1]*B[0]; if(Math.abs(den)<1e-12) return b;
+    const t=((c[0]-a[0])*B[1]-(c[1]-a[1])*B[0])/den; return [a[0]+t*A[0],a[1]+t*A[1]];};
+  for(let i=0;i<clip.length;i++){
+    const a=clip[i], b=clip[(i+1)%clip.length]; const input=out; out=[];
+    for(let j=0;j<input.length;j++){
+      const cur=input[j], prev=input[(j+input.length-1)%input.length];
+      const curIn=inside(cur,a,b), prevIn=inside(prev,a,b);
+      if(curIn){ if(!prevIn) out.push(inter(prev,cur,a,b)); out.push(cur); }
+      else if(prevIn){ out.push(inter(prev,cur,a,b)); }
+    }
+    if(out.length===0) return [];
+  }
+  return out;
+}
+function distToSeg(p,a,b){
+  const dx=b[0]-a[0],dy=b[1]-a[1], l2=dx*dx+dy*dy;
+  let t = l2>0 ? ((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l2 : 0; t=Math.max(0,Math.min(1,t));
+  const cx=a[0]+t*dx, cy=a[1]+t*dy; return Math.hypot(p[0]-cx,p[1]-cy);
+}
+
+/* Standard gamuts (xy primaries) */
+const STD = {
+  "Rec.709": { sub:"sRGB", tri:[[0.64,0.33],[0.30,0.60],[0.15,0.06]], color:"#4a90d9" },
+  "DCI-P3":  { sub:"cinema", tri:[[0.68,0.32],[0.265,0.690],[0.150,0.060]], color:"#9b59b6" },
+  "Rec.2020":{ sub:"UHD", tri:[[0.708,0.292],[0.170,0.797],[0.131,0.046]], color:"#e0a020" },
+};
+
+/* ---------- white-mix solver: non-negative optical powers → D65 ---------- */
+function solveWhite(lasers){
+  const n = lasers.length;
+  if(n===0) return {powers:[], mix:null, dist:Infinity};
+  const cols = lasers.map(l => cmfAt(l.wl)); // [X,Y,Z] per unit power
+  const Wc = 60;
+  // rows: chroma-x, chroma-y (weighted), luminance normalization
+  const A = [[],[],[]], b=[0,0,1];
+  for(let i=0;i<n;i++){
+    const [X,Y,Z]=cols[i], S=X+Y+Z;
+    A[0][i]=Wc*(X - D65[0]*S);
+    A[1][i]=Wc*(Y - D65[1]*S);
+    A[2][i]=Y;
+  }
+  // Normal equations
+  const AtA=[], Atb=new Array(n).fill(0);
+  for(let i=0;i<n;i++){ AtA[i]=new Array(n).fill(0);
+    for(let j=0;j<n;j++){ let s=0; for(let r=0;r<3;r++) s+=A[r][i]*A[r][j]; AtA[i][j]=s; }
+    for(let r=0;r<3;r++) Atb[i]+=A[r][i]*b[r];
+  }
+  // Lipschitz via power iteration
+  let v=new Array(n).fill(1), lam=1;
+  for(let k=0;k<30;k++){ const w=new Array(n).fill(0);
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++) w[i]+=AtA[i][j]*v[j];
+    lam=Math.hypot(...w)||1; for(let i=0;i<n;i++) v[i]=w[i]/lam;
+  }
+  const step = 1/(lam+1e-9);
+  let P=new Array(n).fill(1/n);
+  for(let it=0; it<800; it++){
+    const g=new Array(n).fill(0);
+    for(let i=0;i<n;i++){ let s=-Atb[i]; for(let j=0;j<n;j++) s+=AtA[i][j]*P[j]; g[i]=s; }
+    for(let i=0;i<n;i++) P[i]=Math.max(0, P[i]-step*g[i]);
+  }
+  // Resulting chromaticity
+  let X=0,Y=0,Z=0; for(let i=0;i<n;i++){ X+=P[i]*cols[i][0]; Y+=P[i]*cols[i][1]; Z+=P[i]*cols[i][2]; }
+  const s=X+Y+Z; const mix = s>1e-9 ? [X/s, Y/s] : null;
+  const dist = mix ? Math.hypot(mix[0]-D65[0], mix[1]-D65[1]) : Infinity;
+  return {powers:P, mix, dist};
+}
+
+/* ---------- state ---------- */
+const DEFAULT_WLS = [405,445,460,480,488,520,532,561,577,589,638,660];
+const DEFAULT_ON = new Set([488,532,638]);
+let idc = 0;
+let lasers = DEFAULT_WLS.map(wl => ({ wl, id: ++idc, on: DEFAULT_ON.has(wl) }));
+const activeLasers = () => lasers.filter(l => l.on);
+function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl); }
+
+/* ---------- canvas / rendering ---------- */
+const canvas = document.getElementById('cie');
+const ctx = canvas.getContext('2d');
+const X_MIN=0, X_MAX=0.75, Y_MIN=0, Y_MAX=0.85;
+let W=720, H=760, DPR=1;
+let bgCache = null; // ImageData of colored locus
+
+function sx(x){ return (x - X_MIN)/(X_MAX - X_MIN) * W; }
+function sy(y){ return H - (y - Y_MIN)/(Y_MAX - Y_MIN) * H; }
+function invX(px){ return X_MIN + px/W*(X_MAX-X_MIN); }
+function invY(py){ return Y_MIN + (H-py)/H*(Y_MAX-Y_MIN); }
+
+function setupCanvas(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  const cssW = canvas.clientWidth || 640;
+  const cssH = cssW * (H/W);
+  canvas.width = Math.round(cssW*DPR);
+  canvas.height = Math.round(cssH*DPR);
+  W = canvas.width; H = canvas.height;
+  buildBackground();
+}
+
+function buildBackground(){
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  // bounding box of locus in pixels
+  for(let py=0; py<H; py++){
+    const y = invY(py+0.5);
+    for(let px=0; px<W; px++){
+      const x = invX(px+0.5);
+      const idx=(py*W+px)*4;
+      if(pointInPoly([x,y], LOCUS)){
+        let [r,g,b] = xyYtoRGB(x,y,1.0);
+        r=Math.max(0,r); g=Math.max(0,g); b=Math.max(0,b);
+        const m=Math.max(r,g,b)||1; r/=m; g/=m; b/=m;
+        d[idx]=gammaEnc(r)*255; d[idx+1]=gammaEnc(g)*255; d[idx+2]=gammaEnc(b)*255; d[idx+3]=235;
+      } else { d[idx+3]=0; }
+    }
+  }
+  bgCache = img;
+}
+
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function draw(sol, hull){
+  const gridCol = cssVar('--grid');
+  const textCol = cssVar('--faint');
+  const lineCol = cssVar('--line-strong');
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle = gridCol; ctx.lineWidth = 1*DPR; ctx.fillStyle = textCol;
+  ctx.font = `${11*DPR}px ui-monospace, monospace`;
+  for(let gx=0; gx<=0.7; gx+=0.1){ ctx.beginPath(); ctx.moveTo(sx(gx),sy(0)); ctx.lineTo(sx(gx),sy(Y_MAX)); ctx.stroke(); }
+  for(let gy=0; gy<=0.8; gy+=0.1){ ctx.beginPath(); ctx.moveTo(sx(0),sy(gy)); ctx.lineTo(sx(X_MAX),sy(gy)); ctx.stroke(); }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let gx=0.1; gx<=0.7; gx+=0.1) ctx.fillText(gx.toFixed(1), sx(gx), sy(0)+3*DPR);
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let gy=0.1; gy<=0.8; gy+=0.1) ctx.fillText(gy.toFixed(1), sx(0)-3*DPR, sy(gy));
+
+  // colored locus
+  if(bgCache) ctx.putImageData(bgCache, 0, 0);
+
+  // locus outline + line of purples
+  ctx.strokeStyle = lineCol; ctx.lineWidth=1.2*DPR; ctx.beginPath();
+  LOCUS.forEach((p,i)=>{ const X=sx(p[0]),Y=sy(p[1]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); });
+  ctx.closePath(); ctx.stroke();
+
+  // wavelength ticks
+  ctx.fillStyle = textCol; ctx.font=`${10.5*DPR}px ui-monospace, monospace`;
+  const ticks=[460,480,500,520,540,560,580,600,620,660];
+  ticks.forEach(wl=>{
+    const p=xyOfWavelength(wl); const cx=sx(p[0]),cy=sy(p[1]);
+    // outward normal (approx from centroid)
+    const nx=cx-sx(0.33), ny=cy-sy(0.33); const nl=Math.hypot(nx,ny)||1;
+    ctx.beginPath(); ctx.arc(cx,cy,2.2*DPR,0,7); ctx.fill();
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(wl, cx+nx/nl*15*DPR, cy+ny/nl*15*DPR);
+  });
+
+  // standard gamut references (thin outlines)
+  Object.values(STD).forEach(g=>{
+    ctx.strokeStyle = g.color; ctx.globalAlpha=0.35; ctx.lineWidth=1*DPR; ctx.setLineDash([4*DPR,4*DPR]);
+    ctx.beginPath(); g.tri.forEach((p,i)=>{const X=sx(p[0]),Y=sy(p[1]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.closePath(); ctx.stroke();
+  });
+  ctx.setLineDash([]); ctx.globalAlpha=1;
+
+  // laser gamut fill
+  if(hull.length>=3){
+    ctx.beginPath(); hull.forEach((p,i)=>{const X=sx(p[0]),Y=sy(p[1]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,255,255,0.10)'; ctx.fill();
+    ctx.strokeStyle=cssVar('--text'); ctx.globalAlpha=0.8; ctx.lineWidth=1.5*DPR; ctx.stroke(); ctx.globalAlpha=1;
+  } else if(hull.length===2){
+    ctx.beginPath(); ctx.moveTo(sx(hull[0][0]),sy(hull[0][1])); ctx.lineTo(sx(hull[1][0]),sy(hull[1][1]));
+    ctx.strokeStyle=cssVar('--text'); ctx.lineWidth=1.5*DPR; ctx.stroke();
+  }
+
+  // D65 point
+  const dpx=sx(D65[0]), dpy=sy(D65[1]);
+  ctx.beginPath(); ctx.arc(dpx,dpy,5*DPR,0,7);
+  ctx.fillStyle='#fff'; ctx.fill(); ctx.strokeStyle='#000'; ctx.lineWidth=1.5*DPR; ctx.stroke();
+
+  // mix point
+  if(sol.mix){
+    const mx=sx(sol.mix[0]), my=sy(sol.mix[1]);
+    ctx.beginPath(); ctx.arc(mx,my,4*DPR,0,7);
+    ctx.fillStyle=mixToCss(sol.mix[0],sol.mix[1]); ctx.fill();
+    ctx.strokeStyle=cssVar('--accent'); ctx.lineWidth=2*DPR; ctx.stroke();
+  }
+
+  // disabled laser markers (faint hollow diamonds)
+  lasers.filter(l=>!l.on).forEach(l=>{
+    const p=xyOfWavelength(l.wl); const cx=sx(p[0]),cy=sy(p[1]); const s=4.5*DPR;
+    ctx.beginPath(); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath();
+    ctx.globalAlpha=0.45; ctx.strokeStyle=cssVar('--faint'); ctx.lineWidth=1.3*DPR; ctx.stroke(); ctx.globalAlpha=1;
+  });
+  // enabled laser points (filled diamonds)
+  lasers.filter(l=>l.on).forEach(l=>{
+    const p=xyOfWavelength(l.wl); const cx=sx(p[0]),cy=sy(p[1]); const s=6.5*DPR;
+    ctx.beginPath(); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath();
+    ctx.fillStyle=chromaToCss(p[0],p[1]); ctx.fill();
+    ctx.strokeStyle= l.id===dragId ? cssVar('--accent') : '#000'; ctx.lineWidth=(l.id===dragId?2.5:1.5)*DPR; ctx.stroke();
+  });
+}
+
+/* ---------- recompute + render everything ---------- */
+function recompute(){
+  const active = activeLasers();
+  const pts = active.map(l=>xyOfWavelength(l.wl));
+  const hull = convexHull(pts);
+  const sol = solveWhite(active);
+  // map solved powers back to laser id
+  const powerById = {};
+  const totalP = sol.powers.reduce((a,b)=>a+b,0) || 1;
+  active.forEach((l,i)=> powerById[l.id] = sol.powers[i] || 0);
+  draw(sol, hull);
+  renderRail(sol, hull, powerById, totalP);
+}
+
+/* ---------- UI: rail ---------- */
+const laserList = document.getElementById('laserList');
+function renderRail(sol, hull, powerById, totalP){
+  const nActive = activeLasers().length;
+  document.getElementById('countPill').textContent = `${nActive} on · ${lasers.length}`;
+  // status
+  const dist = sol.dist;
+  const verdict=document.getElementById('verdict'), detail=document.getElementById('verdictDetail');
+  const swatch=document.getElementById('mixSwatch');
+  if(sol.mix){
+    swatch.style.background = mixToCss(sol.mix[0], sol.mix[1]);
+    document.getElementById('mixXY').textContent = `x ${sol.mix[0].toFixed(4)}  y ${sol.mix[1].toFixed(4)}`;
+    document.getElementById('mixDist').textContent = 'Δ ' + dist.toFixed(4);
+  } else {
+    swatch.style.background = 'var(--panel-2)';
+    document.getElementById('mixXY').textContent = '—';
+    document.getElementById('mixDist').textContent = '—';
+  }
+  if(nActive < 2){
+    verdict.textContent='Select ≥ 2 lines'; verdict.className='verdict off';
+    detail.textContent='Check at least two wavelengths to mix white.';
+  } else if(dist < 0.0045){
+    verdict.textContent='Perfect white ✓'; verdict.className='verdict ok';
+    detail.textContent='These lines blend to D65 at the powers below.';
+  } else if(dist < 0.02){
+    verdict.textContent='Near white'; verdict.className='verdict near';
+    detail.textContent='Closest reachable point is slightly off D65.';
+  } else {
+    verdict.textContent='Cannot reach white'; verdict.className='verdict off';
+    detail.textContent='D65 lies outside these primaries — add or shift a line.';
+  }
+
+  // laser rows — powers normalized so the most-demanding line = 100% (1.0)
+  const activeP = lasers.filter(l=>l.on).map(l=>powerById[l.id]||0);
+  const maxP = Math.max(1e-12, ...activeP);
+  const refW = Math.max(0.001, parseFloat(document.getElementById('refW').value) || 1);
+  laserList.innerHTML='';
+  lasers.forEach((l)=>{
+    const p = xyOfWavelength(l.wl);
+    const power = powerById[l.id] || 0;
+    const ratio = l.on ? power/maxP : 0;      // 0..1, limiting line = 1
+    const pct = ratio*100;
+    const watts = ratio*refW;
+    const isLimit = l.on && power >= maxP*0.9999;
+    const valHtml = l.on
+      ? `${pct.toFixed(0)}%<span class="w"> · ${watts.toFixed(2)} W</span>`
+      : '—';
+    const row=document.createElement('div'); row.className='laser-row' + (l.on ? '' : ' off');
+    row.innerHTML = `
+      <input class="on-box" type="checkbox" data-on="${l.id}" ${l.on?'checked':''} title="Include in mix">
+      <div class="laser-swatch" style="background:${chromaToCss(p[0],p[1])}"></div>
+      <div class="laser-main">
+        <div class="laser-top">
+          <input class="wl-input mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}">
+          <span class="wl-unit">nm</span>
+          <span class="power-val mono${isLimit?' limit':''}" style="margin-left:auto">${valHtml}${isLimit?' ·max':''}</span>
+        </div>
+        <div class="power-line">
+          <div class="power-bar"><div class="power-fill" style="width:${pct.toFixed(1)}%"></div></div>
+        </div>
+      </div>
+      <button class="del-btn" data-del="${l.id}" title="Remove">×</button>`;
+    laserList.appendChild(row);
+  });
+
+  // coverage
+  const cov=document.getElementById('coverage'); cov.innerHTML='';
+  Object.entries(STD).forEach(([name,g])=>{
+    let pctCov=0;
+    if(hull.length>=3){ const inter=clipPoly(g.tri, hull); pctCov = polyArea(inter)/polyArea(g.tri)*100; }
+    pctCov=Math.max(0,Math.min(100,pctCov));
+    const row=document.createElement('div'); row.className='cov-row';
+    row.innerHTML=`
+      <div class="cov-name">${name} <small>${g.sub}</small></div>
+      <div class="cov-bar"><div class="cov-fill" style="width:${pctCov.toFixed(0)}%;background:${g.color}"></div></div>
+      <div class="cov-val mono">${pctCov.toFixed(0)}%</div>`;
+    cov.appendChild(row);
+  });
+  document.getElementById('gamutArea').textContent = hull.length>=3 ? polyArea(hull).toFixed(4) : '0';
+  document.getElementById('primCount').textContent = nActive;
+}
+
+/* ---------- events ---------- */
+laserList.addEventListener('change', e=>{
+  if(e.target.classList.contains('on-box')){
+    const l=lasers.find(x=>x.id===+e.target.dataset.on);
+    if(l){ l.on=e.target.checked; recompute(); }
+    return;
+  }
+  const id=+e.target.dataset.id;
+  if(id && e.target.classList.contains('wl-input')){
+    let v=Math.round(+e.target.value);
+    if(!isFinite(v)){ recompute(); return; }
+    v=Math.max(400, Math.min(700, v));
+    const l=lasers.find(x=>x.id===id);
+    if(l){ l.wl=v; sortLasers(); recompute(); }
+  }
+});
+laserList.addEventListener('click', e=>{
+  const del=e.target.dataset.del;
+  if(del){ lasers=lasers.filter(x=>x.id!==+del); recompute(); }
+});
+function addWavelength(){
+  const inp=document.getElementById('addInput');
+  let v=Math.round(+inp.value);
+  if(!isFinite(v)) return;
+  v=Math.max(400, Math.min(700, v));
+  lasers.push({wl:v, id:++idc, on:true}); sortLasers(); recompute();
+}
+document.getElementById('addBtn').addEventListener('click', addWavelength);
+document.getElementById('addInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addWavelength(); } });
+document.getElementById('refW').addEventListener('input', ()=>recompute());
+
+/* ---------- best subset finder ---------- */
+const WHITE_TOL = 0.003;      // xy distance considered "white"
+function rec2020Cov(hull){
+  if(hull.length<3) return 0;
+  const t=STD['Rec.2020'].tri;
+  return polyArea(clipPoly(t, hull))/polyArea(t)*100;
+}
+function* combinations(arr, k, start=0, cur=[]){
+  if(cur.length===k){ yield cur.slice(); return; }
+  for(let i=start;i<=arr.length-(k-cur.length);i++){ cur.push(arr[i]); yield* combinations(arr,k,i+1,cur); cur.pop(); }
+}
+function findBestSubset(mode){
+  const all = lasers.slice();
+  const n = all.length;
+  if(n < 2) return null;
+  const maxK = Math.min(n > 14 ? 5 : 6, n);
+  let best = null;
+  const idxs = all.map((_,i)=>i);
+  for(let k=2; k<=maxK; k++){
+    for(const c of combinations(idxs, k)){
+      const subset = c.map(i=>all[i]);
+      const sol = solveWhite(subset);
+      if(sol.dist < WHITE_TOL){
+        const hull = convexHull(subset.map(l=>xyOfWavelength(l.wl)));
+        const cand = {
+          ids: subset.map(l=>l.id), wls: subset.map(l=>l.wl).sort((a,b)=>a-b),
+          k, dist: sol.dist,
+          area: hull.length>=3 ? polyArea(hull) : 0,
+          rec2020: rec2020Cov(hull),
+        };
+        if(!best || isBetter(cand, best, mode)) best = cand;
+      }
+    }
+    if(mode==='fewest' && best) break; // smallest k that works wins
+  }
+  return best;
+}
+function isBetter(a, b, mode){
+  if(mode==='fewest'){ if(a.k!==b.k) return a.k<b.k; if(Math.abs(a.rec2020-b.rec2020)>0.01) return a.rec2020>b.rec2020; return a.dist<b.dist; }
+  if(Math.abs(a.rec2020-b.rec2020)>0.01) return a.rec2020>b.rec2020; // widest
+  if(Math.abs(a.area-b.area)>1e-6) return a.area>b.area;
+  return a.dist<b.dist;
+}
+function applySubset(ids){
+  const set = new Set(ids);
+  lasers.forEach(l=> l.on = set.has(l.id));
+  recompute();
+}
+const finderResult = document.getElementById('finderResult');
+document.querySelectorAll('.find-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const mode = btn.dataset.mode;
+    finderResult.innerHTML = 'Searching combinations…';
+    setTimeout(()=>{
+      const best = findBestSubset(mode);
+      if(!best){
+        finderResult.innerHTML = `<span class="win none">No 2–${Math.min(6,lasers.length)} line combination reaches D65.</span><br>Add a line that spreads the gamut wider (a deeper blue or a red), then try again.`;
+        return;
+      }
+      applySubset(best.ids);
+      const label = mode==='fewest' ? 'Fewest lines' : 'Widest gamut';
+      finderResult.innerHTML =
+        `<span class="win">${label}: ${best.wls.join(' + ')} nm</span><br>` +
+        `<span class="metrics">${best.k} lines · Δ ${best.dist.toFixed(4)} to D65 · Rec.2020 ${best.rec2020.toFixed(0)}%</span>`;
+    }, 20);
+  });
+});
+
+/* drag points on canvas */
+let dragId=null;
+function eventXY(e){
+  const r=canvas.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+  return [cx*(canvas.width/r.width), cy*(canvas.height/r.height)];
+}
+function nearestLaser(px,py){
+  let best=null, bd=18*DPR;
+  lasers.forEach(l=>{ const p=xyOfWavelength(l.wl); const d=Math.hypot(sx(p[0])-px, sy(p[1])-py); if(d<bd){bd=d; best=l;} });
+  return best;
+}
+function wlNearestTo(px,py){
+  // find wavelength whose locus point is closest to cursor
+  let best=550, bd=Infinity;
+  for(let wl=400; wl<=700; wl+=1){ const p=xyOfWavelength(wl); const d=Math.hypot(sx(p[0])-px, sy(p[1])-py); if(d<bd){bd=d; best=wl;} }
+  return best;
+}
+function onDown(e){
+  const [px,py]=eventXY(e); const l=nearestLaser(px,py);
+  if(l){ dragId=l.id; e.preventDefault(); recompute(); }
+}
+function onMove(e){
+  if(dragId==null) return; e.preventDefault();
+  const [px,py]=eventXY(e); const wl=wlNearestTo(px,py);
+  const l=lasers.find(x=>x.id===dragId); if(l && l.wl!==wl){ l.wl=wl; recompute(); }
+}
+function onUp(){ if(dragId!=null){ dragId=null; recompute(); } }
+canvas.addEventListener('mousedown', onDown);
+window.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', onDown, {passive:false});
+canvas.addEventListener('touchmove', onMove, {passive:false});
+canvas.addEventListener('touchend', onUp);
+canvas.addEventListener('mousemove', e=>{
+  if(dragId!=null) return;
+  const [px,py]=eventXY(e); canvas.style.cursor = nearestLaser(px,py)?'grab':'crosshair';
+});
+
+/* theme + resize */
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener && mq.addEventListener('change', ()=>recompute());
+new MutationObserver(()=>recompute()).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>{ setupCanvas(); recompute(); }, 120); });
+
+setupCanvas();
+recompute();
+</script>
