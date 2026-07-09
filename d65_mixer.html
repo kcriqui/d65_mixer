@@ -332,8 +332,9 @@
 
       <div class="card section">
         <h2>Best Subset Finder</h2>
-        <p class="finder-desc">Search every listed wavelength for the combination that reaches D65 white.</p>
+        <p class="finder-desc">Search the listed lasers for the best combination — reaching D65, or the closest a single pair can get.</p>
         <div class="finder-btns">
+          <button class="find-btn" data-mode="pair">Best pair</button>
           <button class="find-btn" data-mode="fewest">Fewest lines</button>
           <button class="find-btn" data-mode="widest">Widest gamut</button>
         </div>
@@ -467,10 +468,30 @@ const STD = {
 };
 
 /* ---------- white-mix solver: non-negative optical powers → D65 ---------- */
+// Two lasers: the achievable chromaticities are exactly the segment between the
+// two primary points, so the best white is the closest point on that segment to D65.
+function solvePair(cols){
+  const S=[cols[0][0]+cols[0][1]+cols[0][2], cols[1][0]+cols[1][1]+cols[1][2]];
+  const xy1=[cols[0][0]/S[0], cols[0][1]/S[0]];
+  const xy2=[cols[1][0]/S[1], cols[1][1]/S[1]];
+  const dx=xy2[0]-xy1[0], dy=xy2[1]-xy1[1], L2=dx*dx+dy*dy;
+  let t = L2>1e-12 ? ((D65[0]-xy1[0])*dx+(D65[1]-xy1[1])*dy)/L2 : 0;
+  t=Math.max(0,Math.min(1,t));
+  const d=xy=>Math.hypot(xy[0]-D65[0], xy[1]-D65[1]);
+  if(t<=1e-6)   return {powers:[1,0], mix:xy1, dist:d(xy1)};
+  if(t>=1-1e-6) return {powers:[0,1], mix:xy2, dist:d(xy2)};
+  const C=[xy1[0]+t*dx, xy1[1]+t*dy];
+  // power ratio r=P2/P1 that realizes chromaticity C: x = (X1+rX2)/(S1+rS2)
+  const denom=cols[1][0]-C[0]*S[1];
+  let r = Math.abs(denom)>1e-9 ? (C[0]*S[0]-cols[0][0])/denom
+                               : (C[1]*S[0]-cols[0][1])/(cols[1][1]-C[1]*S[1]);
+  return {powers:[1, Math.max(0,r)], mix:C, dist:d(C)};
+}
 function solveWhite(lasers){
   const n = lasers.length;
   if(n===0) return {powers:[], mix:null, dist:Infinity};
   const cols = lasers.map(l => cmfAt(l.wl)); // [X,Y,Z] per unit power
+  if(n===2) return solvePair(cols);          // exact closest-to-D65 on the 2-laser segment
   const Wc = 60;
   // rows: chroma-x, chroma-y (weighted), luminance normalization
   const A = [[],[],[]], b=[0,0,1];
@@ -955,6 +976,19 @@ function isBetter(a, b, mode){
   if(Math.abs(a.area-b.area)>1e-6) return a.area>b.area;
   return a.dist<b.dist;
 }
+// Best 2-laser approximation: the pair whose segment passes closest to D65.
+function findBestPair(){
+  const all = lasers.slice();
+  if(all.length < 2) return null;
+  let best = null;
+  for(let i=0;i<all.length;i++) for(let j=i+1;j<all.length;j++){
+    const sol = solveWhite([all[i], all[j]]);
+    if(!best || sol.dist < best.dist){
+      best = { ids:[all[i].id, all[j].id], wls:[all[i].wl, all[j].wl].sort((a,b)=>a-b), dist:sol.dist };
+    }
+  }
+  return best;
+}
 function applySubset(ids){
   const set = new Set(ids);
   lasers.forEach(l=> l.on = set.has(l.id));
@@ -966,6 +1000,18 @@ document.querySelectorAll('.find-btn').forEach(btn=>{
     const mode = btn.dataset.mode;
     finderResult.innerHTML = 'Searching combinations…';
     setTimeout(()=>{
+      if(mode==='pair'){
+        const bp = findBestPair();
+        if(!bp){ finderResult.innerHTML = '<span class="win none">Add at least two lasers to the list.</span>'; return; }
+        applySubset(bp.ids);
+        const quality = bp.dist < 0.0045 ? 'reaches D65'
+                      : bp.dist < 0.02   ? 'near-white (best a pair can do)'
+                      : 'closest a single pair can get';
+        finderResult.innerHTML =
+          `<span class="win">Best pair: ${bp.wls.join(' + ')} nm</span><br>` +
+          `<span class="metrics">2 lasers · Δ ${bp.dist.toFixed(4)} to D65 · ${quality}</span>`;
+        return;
+      }
       const best = findBestSubset(mode);
       if(!best){
         finderResult.innerHTML = `<span class="win none">No 2–${Math.min(6,lasers.length)} line combination reaches D65.</span><br>Add a line that spreads the gamut wider (a deeper blue or a red), then try again.`;
