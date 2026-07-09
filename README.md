@@ -4,7 +4,7 @@ An interactive CIE 1931 tool for laser-projector color design. Build a set of re
 lasers, find the blend that reads as perfect **D65 white**, and see the color
 **gamut** those primaries can reproduce.
 
-**▶ Live tool:** _enable GitHub Pages, then this becomes_ `https://<user>.github.io/d65_mixer/`
+**▶ Live tool: https://kcriqui.github.io/d65_mixer/**
 
 It's a single self-contained `d65_mixer.html` — no build step, no external requests —
 so it runs anywhere you can open the file, including GitHub Pages.
