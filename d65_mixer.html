@@ -140,6 +140,8 @@
   .type-badge.OPSL { color: #8fb7ff; border-color: #3a557f; }
   .type-badge.Diode { color: #ff9d6e; border-color: #7f4a35; }
   .type-badge.DPSS { color: #7fe0a0; border-color: #35704a; }
+  .mode-tag { font-size: 10px; letter-spacing: 0.03em; color: var(--faint); flex: none; }
+  .spec.est { color: var(--warn); opacity: 0.85; cursor: help; }
   .lr-specs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 26px; }
   .spec { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--faint); }
   .spec-input {
@@ -488,60 +490,61 @@ function solveWhite(lasers){
 }
 
 /* ---------- laser catalog ----------
-   Beam specs from Coherent datasheets (Genesis MX STM/SLM, Taipan HD & standard);
-   diode/DPSS are representative estimates. diam = beam diameter at aperture (mm, 1/e²),
-   diverg = full-angle divergence (mrad). */
+   Coherent OPSL specs from published datasheets. Genesis MX (STM) and Taipan HD
+   are the SAME TEM00 hardware — merged into one entry per wavelength. Standard
+   Taipan is the multimode (MM) variant. Diode/DPSS beam specs are representative
+   estimates. diam = beam Ø at aperture (mm, 1/e²), diverg = full-angle (mrad). */
+const mk = (name,type,mode,wl,power_W,diam,diverg,est) =>
+  ({ name, brand: type==='OPSL' ? 'Coherent' : 'Generic', type, mode, wl, power_W, diam, diverg, est });
 const CATALOG = [
-  // --- Coherent Genesis MX (OPSL, TEM00) — all MX share 1.0mm / 0.7mrad, M²<1.1 ---
-  { name:"Coherent Genesis MX460",  brand:"Coherent", type:"OPSL", wl:460, power_W:0.5, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX480",  brand:"Coherent", type:"OPSL", wl:480, power_W:0.5, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX488",  brand:"Coherent", type:"OPSL", wl:488, power_W:1.0, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX514",  brand:"Coherent", type:"OPSL", wl:514, power_W:1.0, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX532",  brand:"Coherent", type:"OPSL", wl:532, power_W:1.5, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX561",  brand:"Coherent", type:"OPSL", wl:561, power_W:0.5, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX577",  brand:"Coherent", type:"OPSL", wl:577, power_W:1.0, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX590",  brand:"Coherent", type:"OPSL", wl:590, power_W:1.0, diam:1.0, diverg:0.7, est:false },
-  { name:"Coherent Genesis MX607",  brand:"Coherent", type:"OPSL", wl:607, power_W:0.5, diam:1.0, diverg:1.5, est:false },
-  { name:"Coherent Genesis MX639",  brand:"Coherent", type:"OPSL", wl:639, power_W:1.0, diam:1.0, diverg:1.5, est:false },
-  // --- Coherent Taipan HD (OPSL, TEM00, diffraction-limited, lightshow) ---
-  { name:"Coherent Taipan HD 460",  brand:"Coherent", type:"OPSL", wl:460, power_W:2.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan HD 480",  brand:"Coherent", type:"OPSL", wl:480, power_W:2.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan HD 488",  brand:"Coherent", type:"OPSL", wl:488, power_W:3.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan HD 532",  brand:"Coherent", type:"OPSL", wl:532, power_W:5.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan HD 577",  brand:"Coherent", type:"OPSL", wl:577, power_W:3.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan HD 590",  brand:"Coherent", type:"OPSL", wl:590, power_W:2.0, diam:1.2, diverg:0.6, est:true },
-  { name:"Coherent Taipan 639 (red)",brand:"Coherent",type:"OPSL", wl:639, power_W:2.0, diam:1.5, diverg:1.5, est:true },
-  // --- Coherent Taipan standard (OPSL, multimode M²<6, high power) ---
-  { name:"Coherent Taipan 488 (MM)",brand:"Coherent", type:"OPSL", wl:488, power_W:5.0, diam:1.6, diverg:1.5, est:true },
-  { name:"Coherent Taipan 532 (MM)",brand:"Coherent", type:"OPSL", wl:532, power_W:10.0,diam:1.8, diverg:1.4, est:true },
-  { name:"Coherent Taipan 577 (MM)",brand:"Coherent", type:"OPSL", wl:577, power_W:6.0, diam:1.8, diverg:1.4, est:true },
-  // --- Generic diode lasers (estimated beam specs) ---
-  { name:"Diode 405",  brand:"Generic", type:"Diode", wl:405, power_W:0.3, diam:2.0, diverg:1.2, est:true },
-  { name:"Diode 445",  brand:"Generic", type:"Diode", wl:445, power_W:1.6, diam:3.0, diverg:1.5, est:true },
-  { name:"Diode 460",  brand:"Generic", type:"Diode", wl:460, power_W:1.0, diam:2.5, diverg:1.5, est:true },
-  { name:"Diode 520",  brand:"Generic", type:"Diode", wl:520, power_W:1.0, diam:2.0, diverg:1.5, est:true },
-  { name:"Diode 638",  brand:"Generic", type:"Diode", wl:638, power_W:0.7, diam:2.0, diverg:1.2, est:true },
-  { name:"Diode 660",  brand:"Generic", type:"Diode", wl:660, power_W:0.5, diam:2.0, diverg:1.2, est:true },
-  // --- Generic DPSS lasers (estimated beam specs) ---
-  { name:"DPSS 473",   brand:"Generic", type:"DPSS", wl:473, power_W:0.1, diam:1.5, diverg:1.2, est:true },
-  { name:"DPSS 532",   brand:"Generic", type:"DPSS", wl:532, power_W:0.1, diam:1.5, diverg:1.0, est:true },
+  // OPSL — Genesis MX / Taipan HD (TEM00, M²<1.1; red 607/639 M²<1.2, 1.5 mrad)
+  mk("Coherent MX / Taipan HD 460","OPSL","TEM00",460, 2.0, 1.0, 0.7, false),
+  mk("Coherent MX / Taipan HD 480","OPSL","TEM00",480, 2.0, 1.0, 0.7, false),
+  mk("Coherent MX / Taipan HD 488","OPSL","TEM00",488, 3.0, 1.0, 0.7, false),
+  mk("Coherent Genesis MX514","OPSL","TEM00",514, 1.0, 1.0, 0.7, false),
+  mk("Coherent MX / Taipan HD 532","OPSL","TEM00",532, 5.0, 1.0, 0.7, false),
+  mk("Coherent Genesis MX561","OPSL","TEM00",561, 0.5, 1.0, 0.7, false),
+  mk("Coherent MX / Taipan HD 577","OPSL","TEM00",577, 3.0, 1.0, 0.7, false),
+  mk("Coherent MX / Taipan HD 590","OPSL","TEM00",590, 2.0, 1.0, 0.7, false),
+  mk("Coherent Genesis MX607","OPSL","TEM00",607, 0.5, 1.0, 1.5, false),
+  mk("Coherent MX639 / Taipan red","OPSL","TEM00",639, 1.0, 1.0, 1.5, false),
+  // OPSL — standard Taipan (multimode, M²<6, high power) — beam figures estimated
+  mk("Coherent Taipan 460 MM","OPSL","MM",460, 2.0, 1.5, 1.4, true),
+  mk("Coherent Taipan 480 MM","OPSL","MM",480, 4.0, 1.6, 1.5, true),
+  mk("Coherent Taipan 488 MM","OPSL","MM",488, 5.0, 1.6, 1.5, true),
+  mk("Coherent Taipan 514 MM","OPSL","MM",514, 5.0, 1.8, 1.4, true),
+  mk("Coherent Taipan 532 MM","OPSL","MM",532, 10.0, 1.8, 1.4, true),
+  mk("Coherent Taipan 561 MM","OPSL","MM",561, 2.0, 1.8, 1.4, true),
+  mk("Coherent Taipan 577 MM","OPSL","MM",577, 6.0, 1.8, 1.4, true),
+  mk("Coherent Taipan 639 MM","OPSL","MM",639, 2.0, 1.5, 1.5, true),
+  // Diode (generic, multimode/circularized) — beam figures estimated
+  mk("Diode 405","Diode","MM",405, 0.3, 2.0, 1.2, true),
+  mk("Diode 445","Diode","MM",445, 1.6, 3.0, 1.5, true),
+  mk("Diode 460","Diode","MM",460, 1.0, 2.5, 1.5, true),
+  mk("Diode 520","Diode","MM",520, 1.0, 2.0, 1.5, true),
+  mk("Diode 638","Diode","MM",638, 0.7, 2.0, 1.2, true),
+  mk("Diode 660","Diode","MM",660, 0.5, 2.0, 1.2, true),
+  // DPSS (generic, near-diffraction-limited) — beam figures estimated
+  mk("DPSS 473","DPSS","TEM00",473, 0.1, 1.5, 1.2, true),
+  mk("DPSS 532","DPSS","TEM00",532, 0.1, 1.5, 1.0, true),
 ];
 
 /* ---------- state ---------- */
 let idc = 0;
 function instFromCatalog(cat, on){
-  return { id:++idc, name:cat.name, type:cat.type, wl:cat.wl, diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, on:!!on };
+  return { id:++idc, name:cat.name, type:cat.type, mode:cat.mode, wl:cat.wl,
+           diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, est:cat.est, on:!!on };
 }
 // Default primaries: a mixed-technology RGB white set, plus same-wavelength
 // pairs (off) to compare beam characteristics side by side.
 const DEFAULT_SETUP = [
-  ["Coherent Genesis MX488", true],     // 488 OPSL, TEM00 (STM)
-  ["Coherent Taipan 488 (MM)", false],  // 488 OPSL, multimode — compare
-  ["DPSS 532", true],                   // 532 DPSS
-  ["Coherent Genesis MX532", false],    // 532 OPSL — compare
-  ["Diode 638", true],                  // 638 red diode
+  ["Coherent MX / Taipan HD 488", true],  // 488 OPSL, TEM00
+  ["Coherent Taipan 488 MM", false],      // 488 OPSL, multimode — compare
+  ["DPSS 532", true],                     // 532 DPSS
+  ["Coherent MX / Taipan HD 532", false], // 532 OPSL — compare
+  ["Diode 638", true],                    // 638 red diode
   ["Diode 460", false],
-  ["Coherent Genesis MX577", false],
+  ["Coherent MX / Taipan HD 577", false],
 ];
 let lasers = DEFAULT_SETUP.map(([nm,on]) => instFromCatalog(CATALOG.find(c=>c.name===nm), on));
 const activeLasers = () => lasers.filter(l => l.on);
@@ -777,12 +780,14 @@ function renderRail(sol, hull, powerById, totalP){
         <div class="laser-swatch" style="background:${chromaToCss(p[0],p[1])}"></div>
         <input class="name-input" type="text" value="${escAttr(l.name)}" data-id="${l.id}" data-field="name" title="Laser name">
         <span class="type-badge ${l.type}">${l.type}</span>
+        ${l.mode?`<span class="mode-tag">${l.mode}</span>`:''}
         <button class="del-btn" data-del="${l.id}" title="Remove">×</button>
       </div>
       <div class="lr-specs">
         <span class="spec">λ <input class="spec-input wl mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}" data-field="wl"> nm</span>
         <span class="spec">Ø <input class="spec-input mono" type="number" min="0.1" step="0.1" value="${l.diam}" data-id="${l.id}" data-field="diam"> mm</span>
         <span class="spec">div <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.diverg}" data-id="${l.id}" data-field="diverg"> mrad</span>
+        ${l.est?'<span class="spec est" title="beam specs are representative estimates, not from a datasheet">est</span>':''}
         ${spotHtml}
       </div>
       <div class="power-line">
@@ -849,7 +854,7 @@ function populateCatalog(){
 function addFromCatalog(){
   const val=document.getElementById('catalogSelect').value;
   if(val==='custom'){
-    lasers.push({id:++idc, name:'Custom laser', type:'Diode', wl:550, diam:2.0, diverg:1.0, power_W:1.0, on:true});
+    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, est:true, on:true});
   } else {
     const cat=CATALOG[+val]; if(!cat) return;
     lasers.push(instFromCatalog(cat, true));
