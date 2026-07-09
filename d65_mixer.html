@@ -506,44 +506,45 @@ function solveWhite(lasers){
 }
 
 /* ---------- laser catalog ----------
-   Coherent OPSL specs from published datasheets. Genesis MX (STM) and Taipan HD
-   are the SAME TEM00 hardware — merged into one entry per wavelength. Standard
-   Taipan is the multimode (MM) variant. Diode/DPSS beam specs are representative
-   estimates. diam = beam Ø at aperture (mm, 1/e²), diverg = full-angle (mrad). */
+   OPSL named "OPSL <λ> STM|MTM": STM = single transverse mode (TEM00, Genesis MX
+   / Taipan HD, datasheet beam); MTM = multi transverse mode (standard Taipan, M²<6,
+   estimated beam). OPSL power is not tracked (varies by config). Diode/DPSS keep
+   power (higher-power diodes combine multiple emitters → very different beams).
+   diam = beam Ø at aperture (mm, 1/e²), diverg = full-angle (mrad). */
 const mk = (name,type,mode,wl,power_W,diam,diverg,est) =>
   ({ name, brand: type==='OPSL' ? 'Coherent' : 'Generic', type, mode, wl, power_W, diam, diverg, est });
 const CATALOG = [
-  // OPSL — Genesis MX / Taipan HD (TEM00, M²<1.1; red 607/639 M²<1.2, 1.5 mrad)
-  mk("Coherent MX / Taipan HD 460","OPSL","TEM00",460, 2.0, 1.0, 0.7, false),
-  mk("Coherent MX / Taipan HD 480","OPSL","TEM00",480, 2.0, 1.0, 0.7, false),
-  mk("Coherent MX / Taipan HD 488","OPSL","TEM00",488, 3.0, 1.0, 0.7, false),
-  mk("Coherent Genesis MX514","OPSL","TEM00",514, 1.0, 1.0, 0.7, false),
-  mk("Coherent MX / Taipan HD 532","OPSL","TEM00",532, 5.0, 1.0, 0.7, false),
-  mk("Coherent Genesis MX561","OPSL","TEM00",561, 0.5, 1.0, 0.7, false),
-  mk("Coherent MX / Taipan HD 577","OPSL","TEM00",577, 3.0, 1.0, 0.7, false),
-  mk("Coherent MX / Taipan HD 590","OPSL","TEM00",590, 2.0, 1.0, 0.7, false),
-  mk("Coherent Genesis MX607","OPSL","TEM00",607, 0.5, 1.0, 1.5, false),
-  mk("Coherent MX639 / Taipan red","OPSL","TEM00",639, 1.0, 1.0, 1.5, false),
-  // OPSL — standard Taipan (multimode, M²<6, high power) — beam figures estimated
-  mk("Coherent Taipan 460 MM","OPSL","MM",460, 2.0, 1.5, 1.4, true),
-  mk("Coherent Taipan 480 MM","OPSL","MM",480, 4.0, 1.6, 1.5, true),
-  mk("Coherent Taipan 488 MM","OPSL","MM",488, 5.0, 1.6, 1.5, true),
-  mk("Coherent Taipan 514 MM","OPSL","MM",514, 5.0, 1.8, 1.4, true),
-  mk("Coherent Taipan 532 MM","OPSL","MM",532, 10.0, 1.8, 1.4, true),
-  mk("Coherent Taipan 561 MM","OPSL","MM",561, 2.0, 1.8, 1.4, true),
-  mk("Coherent Taipan 577 MM","OPSL","MM",577, 6.0, 1.8, 1.4, true),
-  mk("Coherent Taipan 590 MM","OPSL","MM",590, 2.0, 1.8, 1.4, true),  // beam = 577 MM
-  mk("Coherent Taipan 639 MM","OPSL","MM",639, 2.0, 1.5, 1.5, true),
-  // Diode (generic, multimode/circularized) — beam figures estimated
-  mk("Diode 405","Diode","MM",405, 0.3, 2.0, 1.2, true),
-  mk("Diode 445","Diode","MM",445, 1.6, 3.0, 1.5, true),
-  mk("Diode 460","Diode","MM",460, 1.0, 2.5, 1.5, true),
-  mk("Diode 520","Diode","MM",520, 1.0, 2.0, 1.5, true),
-  mk("Diode 638","Diode","MM",638, 0.7, 2.0, 1.2, true),
-  mk("Diode 660","Diode","MM",660, 0.5, 2.0, 1.2, true),
+  // OPSL STM (single transverse mode / TEM00; red 607/639 = 1.5 mrad, M²<1.2)
+  mk("OPSL 460 STM","OPSL","STM",460, null, 1.0, 0.7, false),
+  mk("OPSL 480 STM","OPSL","STM",480, null, 1.0, 0.7, false),
+  mk("OPSL 488 STM","OPSL","STM",488, null, 1.0, 0.7, false),
+  mk("OPSL 514 STM","OPSL","STM",514, null, 1.0, 0.7, false),
+  mk("OPSL 532 STM","OPSL","STM",532, null, 1.0, 0.7, false),
+  mk("OPSL 561 STM","OPSL","STM",561, null, 1.0, 0.7, false),
+  mk("OPSL 577 STM","OPSL","STM",577, null, 1.0, 0.7, false),
+  mk("OPSL 590 STM","OPSL","STM",590, null, 1.0, 0.7, false),
+  mk("OPSL 607 STM","OPSL","STM",607, null, 1.0, 1.5, false),
+  mk("OPSL 639 STM","OPSL","STM",639, null, 1.0, 1.5, false),
+  // OPSL MTM (multi transverse mode; standard Taipan, M²<6) — beam figures estimated
+  mk("OPSL 460 MTM","OPSL","MTM",460, null, 1.5, 1.4, true),
+  mk("OPSL 480 MTM","OPSL","MTM",480, null, 1.6, 1.5, true),
+  mk("OPSL 488 MTM","OPSL","MTM",488, null, 1.6, 1.5, true),
+  mk("OPSL 514 MTM","OPSL","MTM",514, null, 1.8, 1.4, true),
+  mk("OPSL 532 MTM","OPSL","MTM",532, null, 1.8, 1.4, true),
+  mk("OPSL 561 MTM","OPSL","MTM",561, null, 1.8, 1.4, true),
+  mk("OPSL 577 MTM","OPSL","MTM",577, null, 1.8, 1.4, true),
+  mk("OPSL 590 MTM","OPSL","MTM",590, null, 1.8, 1.4, true),  // beam = 577 MTM
+  mk("OPSL 639 MTM","OPSL","MTM",639, null, 1.5, 1.5, true),
+  // Diode (generic, multi-mode/combined-emitter) — power tracked; beam estimated
+  mk("Diode 405","Diode","MTM",405, 0.3, 2.0, 1.2, true),
+  mk("Diode 445","Diode","MTM",445, 1.6, 3.0, 1.5, true),
+  mk("Diode 460","Diode","MTM",460, 1.0, 2.5, 1.5, true),
+  mk("Diode 520","Diode","MTM",520, 1.0, 2.0, 1.5, true),
+  mk("Diode 638","Diode","MTM",638, 0.7, 2.0, 1.2, true),
+  mk("Diode 660","Diode","MTM",660, 0.5, 2.0, 1.2, true),
   // DPSS (generic, near-diffraction-limited) — beam figures estimated
-  mk("DPSS 473","DPSS","TEM00",473, 0.1, 1.5, 1.2, true),
-  mk("DPSS 532","DPSS","TEM00",532, 0.1, 1.5, 1.0, true),
+  mk("DPSS 473","DPSS","STM",473, 0.1, 1.5, 1.2, true),
+  mk("DPSS 532","DPSS","STM",532, 0.1, 1.5, 1.0, true),
 ];
 
 /* ---------- state ---------- */
@@ -555,7 +556,7 @@ function instFromCatalog(cat, on){
 // Preset laser sets (by catalog name), applied via the preset buttons.
 const PRESETS = {
   rgbDiode: ["Diode 460","Diode 520","Diode 638"],
-  rgbOPSL:  ["Coherent MX / Taipan HD 480","Coherent MX / Taipan HD 532","Coherent MX639 / Taipan red"],
+  rgbOPSL:  ["OPSL 480 STM","OPSL 532 STM","OPSL 639 STM"],
   allOPSL:  CATALOG.filter(c=>c.type==='OPSL').map(c=>c.name),
 };
 function presetLasers(key){
@@ -564,7 +565,7 @@ function presetLasers(key){
 let lasers = presetLasers('rgbDiode');   // default preset
 const activeLasers = () => lasers.filter(l => l.on);
 // Sort by wavelength; same-wavelength lasers group together by name (deterministic).
-function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || a.name.localeCompare(b.name)); }
+function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || (a.mode==='STM'?0:1)-(b.mode==='STM'?0:1) || a.name.localeCompare(b.name)); }
 sortLasers();
 
 /* ---------- beam geometry ---------- */
@@ -861,7 +862,13 @@ function populateCatalog(){
   const order=['OPSL','Diode','DPSS']; let html='';
   order.forEach(type=>{
     html+=`<optgroup label="${type}">`;
-    CATALOG.forEach((c,i)=>{ if(c.type===type) html+=`<option value="${i}">${escAttr(c.name)} — ${c.wl} nm · ${c.power_W} W</option>`; });
+    CATALOG.map((c,i)=>({c,i}))
+      .filter(o=>o.c.type===type)
+      .sort((a,b)=> a.c.wl-b.c.wl || (a.c.mode==='STM'?0:1)-(b.c.mode==='STM'?0:1))
+      .forEach(o=>{
+        const label = o.c.type==='OPSL' ? o.c.name : `${o.c.name} · ${o.c.power_W} W`;
+        html+=`<option value="${o.i}">${escAttr(label)}</option>`;
+      });
     html+='</optgroup>';
   });
   html+='<optgroup label="Custom"><option value="custom">Custom laser…</option></optgroup>';
@@ -871,7 +878,7 @@ function addFromCatalog(){
   clearPreset();
   const val=document.getElementById('catalogSelect').value;
   if(val==='custom'){
-    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, est:true, on:true});
+    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MTM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, est:true, on:true});
   } else {
     const cat=CATALOG[+val]; if(!cat) return;
     lasers.push(instFromCatalog(cat, true));
