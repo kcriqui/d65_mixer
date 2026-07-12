@@ -1,13 +1,17 @@
-# D65 Laser White Mixer & Gamut Explorer
+# Laser Projector Design Tool
 
-An interactive CIE 1931 tool for laser-projector color design. Build a set of real
-lasers, find the blend that reads as perfect **D65 white**, and see the color
-**gamut** those primaries can reproduce.
+An interactive CIE 1931 tool for designing multi-color laser projectors, aimed at
+aerial-beam rigs. Build a set of real lasers, find the blend that reads as perfect
+**D65 white**, see the color **gamut** those primaries reproduce, and size the
+optical power and **luminous output** for a neutral white beam.
 
 **▶ Live tool: https://kcriqui.github.io/d65_mixer/**
+**· 📄 Research brief: https://kcriqui.github.io/d65_mixer/research.html**
 
 It's a single self-contained `d65_mixer.html` — no build step, no external requests —
-so it runs anywhere you can open the file, including GitHub Pages.
+so it runs anywhere you can open the file, including GitHub Pages. `research.html` is a
+companion brief on how show software (Pangolin BEYOND, Lasergraph DSP) drives 4+ color
+projectors and the beam color science behind the tool.
 
 ## Features
 
@@ -16,7 +20,11 @@ so it runs anywhere you can open the file, including GitHub Pages.
   OPSL beam figures are from Coherent datasheets; diode/DPSS and multimode
   divergence are representative estimates (flagged `est`).
 - **D65 white solver** — computes the non-negative optical powers that mix to the
-  D65 white point, shown max-normalized against a limiting line (in watts).
+  D65 white point.
+- **Beam Output** — set each laser's max power; the blend scales up until one laser
+  (the limiting laser) hits its cap, then reports per-line watts, headroom, and
+  **luminous output** (lm, weighting radiant watts by the eye's response) plus total
+  lumens and lm/W efficiency — the brightness the gamut triangle can't show.
 - **Gamut** — convex hull of the primaries with Rec.709 / DCI-P3 / Rec.2020 coverage.
 - **Presets** — RGB diode, RGB OPSL, All STM, All MTM.
 - **Best-subset finder** — fewest lines to white, widest gamut, or the best 2-laser

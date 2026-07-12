@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beam Projector Color — Research Brief</title>
+<style>
+  :root {
+    --bg:#0d0f14; --panel:#151a24; --panel-2:#1b212d; --line:#252c3a; --line-strong:#333c4e;
+    --text:#e7eaf2; --muted:#8b93a8; --faint:#5b6478; --accent:#37e0cf; --accent-dim:#1c7a72;
+    --doc:#46d17f; --op:#f5b23d; --inf:#7fb0ff;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.32);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eef1f6; --panel:#ffffff; --panel-2:#f4f6fa; --line:#e2e6ee; --line-strong:#cdd3de;
+      --text:#1a2030; --muted:#5c6478; --faint:#8b93a6; --accent:#0f9e91; --accent-dim:#8fe3db;
+      --doc:#1f9d5b; --op:#c07d12; --inf:#3a6fd0;
+      --shadow:0 1px 2px rgba(20,30,60,.06), 0 10px 30px rgba(20,30,60,.08);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d0f14; --panel:#151a24; --panel-2:#1b212d; --line:#252c3a; --line-strong:#333c4e;
+    --text:#e7eaf2; --muted:#8b93a8; --faint:#5b6478; --accent:#37e0cf; --accent-dim:#1c7a72;
+    --doc:#46d17f; --op:#f5b23d; --inf:#7fb0ff; --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.32);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f6; --panel:#ffffff; --panel-2:#f4f6fa; --line:#e2e6ee; --line-strong:#cdd3de;
+    --text:#1a2030; --muted:#5c6478; --faint:#8b93a6; --accent:#0f9e91; --accent-dim:#8fe3db;
+    --doc:#1f9d5b; --op:#c07d12; --inf:#3a6fd0; --shadow:0 1px 2px rgba(20,30,60,.06), 0 10px 30px rgba(20,30,60,.08);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.62; -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace; font-variant-numeric:tabular-nums;}
+  .wrap{max-width:920px; margin:0 auto; padding:46px 24px 90px;}
+  .col{max-width:72ch;}
+
+  /* header */
+  .spectral{height:4px; border-radius:2px; margin-bottom:26px;
+    background:linear-gradient(90deg,#7a3cff,#2f6bff,#22d3d3,#3ad13a,#ffd21a,#ff7a1a,#ff2d55);}
+  .eyebrow{font-size:11.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); font-weight:650;}
+  h1{font-size:clamp(26px,4vw,38px); line-height:1.12; letter-spacing:-.02em; margin:.35em 0 .3em; text-wrap:balance; font-weight:680;}
+  .sub{color:var(--muted); font-size:16px; max-width:64ch; margin:0;}
+  .meta{margin-top:14px; font-size:12.5px; color:var(--faint); display:flex; gap:14px; flex-wrap:wrap;}
+
+  /* sections */
+  section{margin-top:46px;}
+  .sec-head{display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--line); padding-bottom:9px; margin-bottom:18px;}
+  .sec-num{font:600 13px ui-monospace,monospace; color:var(--accent); flex:none;}
+  h2{font-size:20px; letter-spacing:-.01em; margin:0; font-weight:640; text-wrap:balance;}
+  h3{font-size:15.5px; margin:26px 0 6px; font-weight:640; color:var(--text);}
+  p{margin:12px 0;}
+  .col p, .col ul, .col h3{max-width:72ch;}
+  ul{margin:12px 0; padding-left:20px;} li{margin:6px 0;}
+  strong{font-weight:650;}
+  a{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-dim);}
+  a:hover{border-bottom-color:var(--accent);}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9em; background:var(--panel-2);
+    border:1px solid var(--line); border-radius:5px; padding:1px 5px;}
+
+  /* callout / tldr */
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow);}
+  .tldr{margin-top:30px;}
+  .tldr h2{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; font-weight:650;}
+  .pipeline{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; color:var(--text); line-height:1.9;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; white-space:nowrap;}
+  .pipeline b{color:var(--accent); font-weight:600;}
+  .keygrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:16px;}
+  .keygrid > div{background:var(--panel); padding:13px 15px;}
+  .keygrid .k{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint);}
+  .keygrid .v{font-size:14px; margin-top:3px;}
+
+  .note{border-left:3px solid var(--op); background:color-mix(in srgb,var(--op) 9%, var(--panel)); border-radius:0 10px 10px 0; padding:12px 16px; margin:20px 0; font-size:14.5px;}
+  .note b{color:var(--op);}
+  .note.acc{border-left-color:var(--accent); background:color-mix(in srgb,var(--accent) 9%, var(--panel));}
+  .note.acc b{color:var(--accent);}
+
+  /* chips */
+  .chip{display:inline-block; font:600 10.5px/1.5 ui-monospace,monospace; letter-spacing:.03em; padding:1px 7px; border-radius:999px; border:1px solid; vertical-align:middle;}
+  .chip.doc{color:var(--doc); border-color:color-mix(in srgb,var(--doc) 45%, var(--line));}
+  .chip.op{color:var(--op); border-color:color-mix(in srgb,var(--op) 45%, var(--line));}
+  .chip.inf{color:var(--inf); border-color:color-mix(in srgb,var(--inf) 45%, var(--line));}
+
+  /* tables */
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:18px 0;}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:520px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  thead th{background:var(--panel-2); font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:650; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:none;}
+  td .mono, th .mono{white-space:nowrap;}
+  .yes{color:var(--doc); font-weight:650;} .no{color:var(--faint);}
+
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; font-size:12.5px; color:var(--muted);}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .foot{margin-top:50px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint);}
+  .srclist{columns:2; column-gap:34px; font-size:13px; margin-top:10px;}
+  .srclist a{display:block; margin:5px 0; break-inside:avoid; line-height:1.4;}
+  @media (max-width:640px){ .srclist{columns:1;} .pipeline{font-size:11.5px;} }
+</style>
+<style>html,body{background:var(--bg);min-height:100%;}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="spectral"></div>
+  <div class="eyebrow">Research Brief · Laser Projector Color</div>
+  <h1>How show software drives 4+ color projectors — and what it means for a beam rig</h1>
+  <p class="sub">A grounding document for the <span class="mono">d65_mixer</span> project: the color pipeline behind Pangolin BEYOND and its rivals, the ILDA/DAC facts that constrain multi-primary projectors, and the color science that actually governs aerial beams.</p>
+  <div class="meta">
+    <span>Compiled July 2026</span><span>·</span><span>Sources: ILDA standards, Pangolin &amp; LaserAnimation manuals, vendor docs, practitioner forums</span>
+  </div>
+
+  <div class="panel tldr">
+    <h2>The one fact that explains everything</h2>
+    <div class="pipeline">24-bit <b>RGB</b> (file / live) &rarr; <b>software color engine</b> (per-projector calibration + mix) &rarr; <b>N physical channels</b> (3–6) &rarr; <b>DAC</b> &rarr; <b>ILDA pins</b> &rarr; laser modules</div>
+    <p style="margin:14px 0 0; font-size:14.5px;">A 4th, 5th, or 6th color is <strong>never stored in the show file</strong>. The file format is RGB-only; the extra primary is a DAC output channel whose drive level the software <em>computes from RGB</em> using a proprietary, calibration-based mapping. There is no cross-vendor standard for it — that missing mapping is the whole game for multi-color quality.</p>
+    <div class="keygrid">
+      <div><div class="k">Genuine 4+ color DACs</div><div class="v">Pangolin FB4 · LaserAnimation DSP <span class="mono">(6 ch each)</span></div></div>
+      <div><div class="k">Max color wires (ILDA DB25)</div><div class="v">6 — R,G,B + DeepBlue,Yellow,Cyan</div></div>
+      <div><div class="k">Real "better color" rival</div><div class="v">Lasergraph DSP (LaserAnimation)</div></div>
+      <div><div class="k">For beams, optimize</div><div class="v">luminous punch + divergence, <em>not</em> gamut area</div></div>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <section class="col">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pipeline, and why the 4th color lives in the DAC</h2></div>
+    <p>Every package — QuickShow, BEYOND, Lasergraph DSP, Phoenix, LSX — shares the same chain. The artwork (an <code>.ild</code> frame or a live-generated shape) carries <strong>only RGB</strong>. The software holds that as a 24-bit image, then a color engine decides how much of each <em>physical</em> laser channel to emit, per projector, from a stored calibration. The DAC turns those channel values into analog voltages on the ILDA connector, and the projector's diode drivers follow.</p>
+    <p>So a projector with a real yellow laser doesn't get "yellow" from the file — the software <strong>derives</strong> the yellow channel from the RGB image plus a calibration profile, and can choose to fire the dedicated yellow at 100% instead of summing red + green. The extra primary is a dedicated output at the DAC/pin level; its <em>value</em> is computed, not transmitted.</p>
+    <div class="note"><b>The practical trap.</b> A plain 3-wire RGB ILDA path physically cannot light a 4th laser. To use extra primaries you must wire those diode drivers to the DAC's own extra-color outputs (FB4 Color&nbsp;4/5/6, or the DSP's) — the software's multi-channel math has nowhere to go otherwise.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Two ILDA standards, doing two different jobs</h2></div>
+    <p class="col">Color is governed by two <em>independent</em> ILDA specs. Conflating them is the source of most confusion.</p>
+
+    <h3>The file format (<span class="mono">.ild</span> / IDTF) — stores intent, RGB only <span class="chip doc">documented</span></h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Format</th><th>Geometry</th><th>Color storage</th><th class="mono">Bytes/pt</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">0</td><td>3D</td><td>Indexed (1-byte palette index)</td><td class="mono">8</td></tr>
+          <tr><td class="mono">1</td><td>2D</td><td>Indexed (1-byte palette index)</td><td class="mono">6</td></tr>
+          <tr><td class="mono">2</td><td>—</td><td>Palette table (3 bytes RGB / entry)</td><td class="mono">3/entry</td></tr>
+          <tr><td class="mono">4</td><td>3D</td><td>24-bit true color (B,G,R)</td><td class="mono">10</td></tr>
+          <tr><td class="mono">5</td><td>2D</td><td>24-bit true color (B,G,R)</td><td class="mono">8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="col">Every mode expresses color as RGB or an RGB-valued palette — <strong>no field for a yellow/cyan/deep-red laser level</strong>. Formats 4/5 (true color) were added later; older references list only 0/1/2, which is why "someone else's file loads with wrong colors" (a mismatched default palette) is a classic complaint.</p>
+
+    <h3>The DB25 analog interface (ISP-DB25) — carries it to the projector <span class="chip doc">documented</span></h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pin(s)</th><th>Signal</th><th>Status</th><th>Level</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">5/18</td><td>Red</td><td>Required</td><td class="mono">0–5 V analog (diff.)</td></tr>
+          <tr><td class="mono">6/19</td><td>Green</td><td>Required</td><td class="mono">0–5 V</td></tr>
+          <tr><td class="mono">7/20</td><td>Blue</td><td>Required</td><td class="mono">0–5 V</td></tr>
+          <tr><td class="mono">8/21</td><td>Deep Blue / Violet (~457)</td><td>Optional "user 1"</td><td class="mono">0–5 V</td></tr>
+          <tr><td class="mono">9/22</td><td>Yellow</td><td>Optional "user 2"</td><td class="mono">0–5 V</td></tr>
+          <tr><td class="mono">10/23</td><td>Cyan (~488)</td><td>Optional "user 3"</td><td class="mono">0–5 V</td></tr>
+          <tr><td class="mono">3/16</td><td>Intensity / blanking (master, <em>not</em> a color)</td><td>Optional</td><td class="mono">diff.</td></tr>
+          <tr><td class="mono">13</td><td>Shutter (safety)</td><td>Required</td><td class="mono">0–5 V</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="col">Only <strong>R, G, B are mandatory</strong>, all analog 0–5 V (not TTL). The three extra color pins are formally "user-defined" but the industry has settled on deep-blue / yellow / cyan. There is <strong>no reserved pin for deep red</strong> — it has to reuse a user channel. Net ceiling: <strong>6 color wires</strong>.</p>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>What the DACs actually expose</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>DAC / controller</th><th>Color channels</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Pangolin <strong>FB4</strong></td><td class="mono"><span class="yes">6</span></td><td>R,G,B,DeepBlue,Yellow,Cyan · 0–5 V · embedded in Kvant/Riya projectors — the de-facto pro standard</td></tr>
+          <tr><td>LaserAnimation <strong>Lasergraph DSP</strong></td><td class="mono"><span class="yes">6</span></td><td>Six color outputs; the high-end rival</td></tr>
+          <tr><td>Ether Dream</td><td class="mono">RGB + I + 2 aux</td><td>U1/U2 aux DACs can be wired to extra-color pins <em>if</em> software supports it — an RGB+I design at heart</td></tr>
+          <tr><td>Helios</td><td class="mono"><span class="no">RGB only</span></td><td>No extra-color outputs — cannot natively drive a 4th color</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="col">Practical conclusion: real native 4+ color means <strong>FB4 or Lasergraph DSP</strong>. Ether Dream can be coaxed to 4–5; Helios and other RGB-only DACs can't.</p>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>The software landscape</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Software</th><th>Maker</th><th>Color model</th><th>Native 4+ color</th><th>Calibration</th></tr></thead>
+        <tbody>
+          <tr><td><strong>BEYOND</strong> / QuickShow</td><td>Pangolin</td><td>24-bit RGB internal</td><td class="yes">Yes — up to 6 ch</td><td>Palette training, 2/5/11-pt gamma, white balance</td></tr>
+          <tr><td><strong>Lasergraph DSP</strong></td><td>LaserAnimation Sollinger</td><td>Palette, ~48-bit (16-bit/ch)</td><td class="yes">Yes — 6 outputs</td><td>Per-ch white balance + per-laser bias/soft-blank</td></tr>
+          <tr><td><strong>Phoenix</strong> / Showcontroller</td><td>Phoenix &rarr; <em>Pangolin</em> (dist. Laserworld)</td><td>True color + palettes</td><td class="yes">Yes — 6-color-source</td><td>Per-system palette calibration</td></tr>
+          <tr><td>LSX</td><td>DrLava / Innolasers</td><td>True color + palette</td><td class="no">Not documented</td><td>Color-linearity / white balance</td></tr>
+          <tr><td>Mamba Black</td><td>MediaLas</td><td>8-bit RGB</td><td class="no">No (RGB max)</td><td>Intensity map; TTL limited to ~7 colors</td></tr>
+          <tr><td>Showeditor</td><td>Laserworld</td><td>RGB (3 ch max)</td><td class="no">No</td><td>Per-ch min/max (needs analog)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <h3>How BEYOND does it — and its one real limit</h3>
+      <p>BEYOND's <strong>Advanced Color</strong> is a palette-<em>training</em> system: you set per-channel "Color Magnitude" sliders at a handful of trained hues (the six primaries + white, plus custom hues you add like orange), and it interpolates between them onto up to six FB4 channels. Per-channel analog-linear/log modes, multi-point gamma, warm↔ice white balance, and separate beam-vs-graphics palettes are all there.</p>
+      <p>The limit: it's an <strong>RGB&rarr;N-channel remap driven by manual training, not a colorimetric/CIE multi-primary solver</strong>. Dialing in a wide-gamut RGBY/RGBCV projector is a by-eye calibration, not an automatic computation. That's the crack the high-end rivals are praised for filling.</p>
+
+      <h3>Why Lasergraph DSP earns the "best color" reputation <span class="chip inf">inferred from specs</span></h3>
+      <ul>
+        <li><strong>~48-bit color</strong> (16-bit/channel, "281 trillion colors") — fades and low-level <em>atmospheric beam dimming</em> barely band.</li>
+        <li><strong>Native 6-color</strong> driving real 577 yellow / 590 orange / 488 cyan on dedicated channels, not RGB approximation.</li>
+        <li><strong>Per-laser bias / soft-blank offset + per-channel white balance</strong> — clean blacks, accurate white, correct thin-line color, per projector.</li>
+        <li>Real-time palette engine + up to 250 kHz color modulation. Priced ~$5k+, aimed at deep programmers.</li>
+      </ul>
+
+      <div class="note acc"><b>Premise corrections.</b> Several "everybody says" items are wrong: <strong>Phoenix / Showcontroller is now Pangolin-owned</strong> (a tool once cited as beating Pangolin). <strong>"MediaLas LSX" conflates two products</strong> — LSX is DrLava/Innolasers; MediaLas makes the RGB-only Mamba. <strong>There is no Coherent show software</strong> — "Lasershow Designer" (LD2000) is Pangolin's; Coherent makes hardware. The genuine multi-primary rival is <strong>Lasergraph DSP</strong>.</div>
+
+      <p class="mono" style="font-size:12.5px; color:var(--faint);">Comparative "better than Pangolin" claims are largely Photonlexicon forum opinion — those threads block scraping, so no quantitative head-to-head was verifiable.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Color science for aerial beams</h2></div>
+    <p class="col">This is the part that actually informs "the best possible beam projector." Beams are not graphics: you optimize <strong>per-wavelength luminous punch, saturation, atmospheric scattering, and beam divergence</strong> — none of which the flat CIE chromaticity triangle captures.</p>
+
+    <div class="col">
+      <h3>Why add a 4th color to a beam rig</h3>
+      <ul>
+        <li><strong>Raw lumens</strong> — a dedicated yellow (~577–593 nm) sits near the eye's sensitivity peak, adding brightness without "spending" red + green to synthesize it.</li>
+        <li><strong>Neutral true-white</strong> — three narrow spikes hit white on paper but read tinted in air; a 4th wavelength fills the spectral gap and makes warm/cool white tunable.</li>
+        <li><strong>Clean secondaries</strong> — mixed yellow skews orange/dirty and mixed cyan is weak; dedicated lines fix that.</li>
+        <li><strong>Gamut</strong> is the <em>weakest</em> motive for beams — a beam is one saturated color, and area ≠ brightness.</li>
+      </ul>
+    </div>
+
+    <h3 class="col">"Money" wavelengths <span class="chip op">practitioner consensus</span></h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th class="mono">nm</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Red</td><td class="mono">638</td><td>Pro default — ≈3× more visible than 655, ≈8× vs 670; collimates tight</td></tr>
+          <tr><td>Green</td><td class="mono">520 / 532</td><td>Near the photopic peak (~555) → brightest beam per watt; 532 lowest divergence</td></tr>
+          <tr><td>Blue</td><td class="mono">445</td><td>Cheap, powerful royal blue; 465 deeper, 473 more visible but cyan-leaning</td></tr>
+          <tr><td>Amber / Yellow</td><td class="mono">577–593</td><td>"Money" beam color, impossible to mix cleanly from RGB; near brightness peak</td></tr>
+          <tr><td>Cyan</td><td class="mono">488–505</td><td>Clean cyan that RGB renders weak; high eye sensitivity</td></tr>
+          <tr><td>Deep red</td><td class="mono">660</td><td>Prettier, more saturated blood-red — but much dimmer; richness, not brightness</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <h3>Scattering — the nuance most people get half-right <span class="chip doc">established physics</span></h3>
+      <p><strong>Rayleigh</strong> scattering ∝ 1/λ⁴ (blue scatters far more) governs fine haze / clean air — so a blue beam <em>does</em> look disproportionately bright from the side there. But <strong>dense theatrical fog is the Mie regime</strong> (droplets ≈ or &gt; wavelength), which is roughly <strong>wavelength-independent</strong> — that's why fog looks white-grey. So "blue beams look brightest because they scatter most" is true in light haze and <strong>overstated in fog</strong>; in a typical hazy venue, side-view brightness tracks eye sensitivity, and <strong>green wins</strong>.</p>
+
+      <h3>Neutral white is hard for a reason you already modeled</h3>
+      <p>Because green is ~3× more eye-efficient, a neutral white needs <strong>more red and blue optical power than green</strong> — the tool's "limiting line" logic. And critically, the colors' <strong>beam diameter and divergence must match</strong>, or the white only overlaps perfectly at one distance and fringes / tints elsewhere. <strong>That is exactly the tool's beam-corrected mode and halo warning</strong> — the literature arrives at the same feature independently.</p>
+
+      <div class="note"><b>Helmholtz–Kohlrausch.</b> Saturated blue and red beams appear <em>brighter</em> than an equal-luminance white — strongest in the dark, where beam shows live. Another punch the flat gamut plot hides.</div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="col">
+    <div class="sec-head"><span class="sec-num">06</span><h2>What it means for <span class="mono">d65_mixer</span></h2></div>
+    <p>The show packages do <em>runtime</em> color rendering on a projector you already own. This tool answers the upstream question none of them do: <strong>which lasers, at what wavelengths and power, to buy for a neutral white beam and a good palette.</strong> The research points a beam-oriented version toward:</p>
+    <ul>
+      <li><strong>Weight white/brightness by luminous efficiency</strong> — surface lumens / relative punch per line (the tool already carries the ȳ curve). This is what gamut hides.</li>
+      <li><strong>Keep the beam-geometry / spot-overlap model</strong> — the research calls this <em>the</em> underrated real-world factor, and it's already built.</li>
+      <li><strong>Model the real 6-channel target</strong> (R,G,B + DeepBlue/Yellow/Cyan — the FB4/DSP reality) so a design maps cleanly onto hardware.</li>
+      <li>Optionally flag <strong>Helmholtz–Kohlrausch punch</strong> for saturated beams.</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    <div class="legend">
+      <span><span class="chip doc">documented</span> from primary spec / manual</span>
+      <span><span class="chip inf">inferred</span> reasoned from documented numbers</span>
+      <span><span class="chip op">opinion</span> practitioner rule-of-thumb / forum</span>
+    </div>
+    <h3 style="margin-top:26px;">Key sources</h3>
+    <div class="srclist">
+      <a href="https://www.ilda.com/resources/StandardsDocs/ILDA_IDTF14_rev011.pdf">ILDA Image Data Transfer Format (IDTF14 rev011)</a>
+      <a href="https://www.ilda.com/resources/StandardsDocs/ILDA_ISP99_rev002.pdf">ILDA Standard Projector interface (ISP-DB25)</a>
+      <a href="https://www.ilda.com/resources/StandardsDocs/ILDA_ImplStdColPal95_rev001.pdf">ILDA Standard Color Palette</a>
+      <a href="https://wiki.pangolin.com/doku.php?id=beyond:advanced_color_settings">Pangolin — BEYOND Advanced Color Settings</a>
+      <a href="https://wiki.pangolin.com/doku.php?id=hardware:fb4:manual">Pangolin — FB4 manual (6 color outputs)</a>
+      <a href="https://pangolin.com/blogs/education/ilda-laser-pinout">Pangolin — ILDA pinout (deep-blue/yellow/cyan)</a>
+      <a href="https://laseranimation.com/en/product/dsp/">LaserAnimation — Lasergraph DSP</a>
+      <a href="https://laseranimation.com/wp-content/uploads/2024/04/LaserAnimation_Sollinger_Manual_PHAENON_XD_2024-4_web.pdf">LaserAnimation — PHAENON XD manual (ILDA pinout, wavelengths)</a>
+      <a href="https://pangolin.com/phoenix/">Pangolin — Phoenix / Showcontroller acquisition</a>
+      <a href="https://ether-dream.com/manual.html">Ether Dream — developer manual</a>
+      <a href="https://www.kvantlasers.sk/blogs/laser-show-projector-guide/rgby-lasers-are-the-best-beasts">Kvant — RGBY lasers (dedicated 577 yellow)</a>
+      <a href="https://www.ilda.com/projectorspecs.htm">ILDA — projector specs &amp; visibility ratios</a>
+      <a href="https://www.laserworld.com/en/wavelengths.html">Laserworld — wavelengths &amp; visibility</a>
+      <a href="https://www.rp-photonics.com/yellow_and_orange_lasers.html">RP Photonics — yellow/orange laser generation</a>
+      <a href="https://en.wikipedia.org/wiki/Helmholtz%E2%80%93Kohlrausch_effect">Helmholtz–Kohlrausch effect</a>
+    </div>
+    <p style="margin-top:18px;">Companion to the <span class="mono">d65_mixer</span> White Mixer &amp; Gamut Explorer. Forum threads (Photonlexicon, laserpointerforums) block automated reading; claims sourced from them are marked <span class="chip op">opinion</span>.</p>
+  </div>
+</div>
+</body>
+</html>

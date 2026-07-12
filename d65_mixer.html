@@ -1,4 +1,4 @@
-<title>Laser White Mixer — CIE 1931</title>
+<title>Laser Projector Design Tool</title>
 <style>
   :root {
     --bg: #0d0f14;
@@ -265,9 +265,9 @@
 
 <div class="wrap">
   <header class="top">
-    <div class="eyebrow">Laser Projector Color Lab</div>
-    <h1>White Mixer &amp; Gamut Explorer — CIE 1931</h1>
-    <p>Build a set of real lasers — Coherent OPSL, diode, and DPSS — to find a blend that reads as perfect D65 white and see the gamut those primaries reproduce. Toggle beam-corrected power to account for each laser’s diameter and divergence at viewing distance.</p>
+    <div class="eyebrow">Aerial Beam Color Design · CIE 1931</div>
+    <h1>Laser Projector Design Tool</h1>
+    <p>Design a multi-color laser projector: pick real lasers (Coherent OPSL, diode, DPSS), blend them to D65 white on the CIE 1931 diagram, see the reproducible gamut, and size the optical power and luminous output for a neutral white beam. <a class="link" href="research.html" target="_blank" rel="noopener">↗ Color &amp; hardware research brief</a></p>
   </header>
 
   <div class="layout">
@@ -296,6 +296,17 @@
         </div>
       </div>
 
+      <div class="card section" id="beamCard">
+        <h2>Beam Output <span class="pill">white at max power</span></h2>
+        <div class="readout-grid">
+          <div class="ro"><span class="k">White luminous output</span><span class="v mono" id="outLumens">—</span></div>
+          <div class="ro"><span class="k">Limiting laser</span><span class="v mono" id="outLimit">—</span></div>
+          <div class="ro"><span class="k">Total optical power</span><span class="v mono" id="outPower">—</span></div>
+          <div class="ro"><span class="k">Efficiency</span><span class="v mono" id="outEff">—</span></div>
+        </div>
+        <div class="mode-note" style="margin-top:12px;">Each line is scaled up until the <b>limiting laser</b> hits its max power (set <span class="mono">max W</span> per laser). Luminous output weights radiant watts by the eye's response — where the gamut triangle can't: green carries most of the lumens.</div>
+      </div>
+
       <div class="card section">
         <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
         <div class="preset-row">
@@ -311,10 +322,6 @@
             <button id="modeBeam" data-mode="beam">Beam-corrected</button>
           </div>
           <div class="ctrl-fields">
-            <div class="ctrl-field">
-              <label for="refW">Limiting line</label>
-              <div class="fld-in"><input id="refW" type="number" min="0.01" step="0.1" value="1.0"><span class="u">W</span></div>
-            </div>
             <div class="ctrl-field">
               <label for="viewDist">Viewing distance</label>
               <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
@@ -353,7 +360,7 @@
   </div>
 
   <p class="foot">
-    Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the blend is solved as non-negative powers landing the combined chromaticity on D65. The gamut is the convex hull of the primaries. In <b>beam-corrected</b> mode the required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)², so a fatter or faster-diverging line needs more power for the same apparent brightness — this shifts which line is limiting but never the on-axis white point. Coherent Genesis MX / Taipan specs are from published datasheets; diode and DPSS beam figures are representative estimates. Beams are assumed co-aligned with spectrally neutral scattering.
+    Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the blend is solved as non-negative powers landing the combined chromaticity on D65. The gamut is the convex hull of the primaries. <b>Beam Output</b> scales the blend up until one laser hits its <span class="mono">max W</span>, then reports luminous output (Φ = 683·V(λ)·W, summed) — the brightness the flat gamut can't show. In <b>beam-corrected</b> mode required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)², shifting which line is limiting but never the on-axis white point. Coherent OPSL specs are from published datasheets; diode/DPSS and multimode figures are representative estimates. Beams are assumed co-aligned with spectrally neutral scattering. See the <a class="link" href="research.html" target="_blank" rel="noopener">color &amp; hardware research brief</a> for how show software (Pangolin BEYOND, Lasergraph DSP) drives multi-color projectors.
   </p>
 </div>
 
@@ -573,7 +580,8 @@ const CATALOG = [
 let idc = 0;
 function instFromCatalog(cat, on){
   return { id:++idc, name:cat.name, type:cat.type, mode:cat.mode, wl:cat.wl,
-           diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W, est:cat.est, on:!!on };
+           diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W,
+           pmax:(cat.power_W!=null ? cat.power_W : 1.0), est:cat.est, on:!!on };
 }
 // Preset laser sets (by catalog name), applied via the preset buttons.
 const PRESETS = {
@@ -794,20 +802,32 @@ function renderRail(sol, hull, powerById, totalP){
     detail.textContent='D65 lies outside these primaries — add or shift a line.';
   }
 
-  // required watts per line = on-axis amount × geometry factor (spot area in beam mode)
-  const wattById = {}; let maxW = 1e-12;
-  lasers.forEach(l=>{ if(l.on){ const w=(powerById[l.id]||0)*geomFactor(l); wattById[l.id]=w; if(w>maxW) maxW=w; } });
-  const refW = Math.max(0.001, parseFloat(document.getElementById('refW').value) || 1);
+  // White build: relative required radiant watts (on-axis amount × geometry), then
+  // scale the whole set up until the first laser reaches its max power.
+  const active = lasers.filter(l=>l.on);
+  const reqW = {};
+  active.forEach(l=> reqW[l.id] = (powerById[l.id]||0)*geomFactor(l));
+  let kMax = Infinity, limitId = null;
+  active.forEach(l=>{
+    const need = reqW[l.id], cap = Math.max(1e-6, l.pmax||0);
+    if(need > 1e-9){ const k = cap/need; if(k < kMax){ kMax = k; limitId = l.id; } }
+  });
+  if(!isFinite(kMax)) kMax = 0;
+  const ybar = wl => cmfAt(wl)[1];                       // photopic luminous efficiency V(λ)
+  const fmtLm = lm => lm>=1000 ? (lm/1000).toFixed(1)+'k lm' : Math.round(lm)+' lm';
+  let totalLm = 0, totalW = 0;
+  active.forEach(l=>{ const aw = kMax*reqW[l.id]; totalW += aw; totalLm += 683*ybar(l.wl)*aw; });
   const z = viewDistM();
+
   laserList.innerHTML='';
   lasers.forEach((l)=>{
     const p = xyOfWavelength(l.wl);
-    const w = wattById[l.id] || 0;
-    const ratio = l.on ? w/maxW : 0;          // 0..1, limiting line = 1
-    const pct = ratio*100;
-    const watts = ratio*refW;
-    const isLimit = l.on && w >= maxW*0.9999;
-    const valHtml = l.on ? `${pct.toFixed(0)}%<span class="w"> · ${watts.toFixed(2)} W</span>` : '—';
+    const actualW = l.on ? kMax*reqW[l.id] : 0;
+    const cap = l.pmax||0;
+    const pctMax = (l.on && cap>0) ? Math.min(100, actualW/cap*100) : 0;
+    const lumens = l.on ? 683*ybar(l.wl)*actualW : 0;
+    const isLimit = l.on && l.id===limitId;
+    const valHtml = l.on ? `${actualW.toFixed(2)} W<span class="w"> · ${fmtLm(lumens)}</span>` : '—';
     const spot = spotDia(l);
     const spotHtml = (mixMode==='beam' && z>0)
       ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
@@ -826,15 +846,28 @@ function renderRail(sol, hull, powerById, totalP){
         <span class="spec">λ <input class="spec-input wl mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}" data-field="wl"> nm</span>
         <span class="spec">Ø <input class="spec-input mono" type="number" min="0.1" step="0.1" value="${l.diam}" data-id="${l.id}" data-field="diam"> mm</span>
         <span class="spec">div <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.diverg}" data-id="${l.id}" data-field="diverg"> mrad</span>
+        <span class="spec">max <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.pmax}" data-id="${l.id}" data-field="pmax"> W</span>
         ${l.est?'<span class="spec est" title="beam specs are representative estimates, not from a datasheet">est</span>':''}
         ${spotHtml}
       </div>
-      <div class="power-line">
-        <div class="power-bar"><div class="power-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      <div class="power-line" title="fill = share of this laser's max power; unfilled = headroom">
+        <div class="power-bar"><div class="power-fill" style="width:${pctMax.toFixed(1)}%"></div></div>
         <span class="power-val mono${isLimit?' limit':''}">${valHtml}${isLimit?' ·max':''}</span>
       </div>`;
     laserList.appendChild(row);
   });
+
+  // Beam Output summary
+  const limitL = active.find(l=>l.id===limitId);
+  const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  if(active.length>=2 && kMax>0){
+    setTxt('outLumens', fmtLm(totalLm));
+    setTxt('outLimit', limitL ? `${limitL.wl} nm` : '—');
+    setTxt('outPower', totalW.toFixed(2)+' W');
+    setTxt('outEff', totalW>0 ? Math.round(totalLm/totalW)+' lm/W' : '—');
+  } else {
+    ['outLumens','outLimit','outPower','outEff'].forEach(id=>setTxt(id,'—'));
+  }
   updateHalo();
   updateModeNote();
 
@@ -872,6 +905,7 @@ laserList.addEventListener('change', e=>{
   if(field==='wl'){ l.wl=Math.max(400,Math.min(700,Math.round(v))); sortLasers(); }
   else if(field==='diam'){ l.diam=Math.max(0.05,v); }
   else if(field==='diverg'){ l.diverg=Math.max(0,v); }
+  else if(field==='pmax'){ l.pmax=Math.max(0,v); }
   recompute();
 });
 laserList.addEventListener('click', e=>{
@@ -901,7 +935,7 @@ function addFromCatalog(){
   clearPreset();
   const val=document.getElementById('catalogSelect').value;
   if(val==='custom'){
-    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MTM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, est:true, on:true});
+    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MTM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, pmax:1.0, est:true, on:true});
   } else {
     const cat=CATALOG[+val]; if(!cat) return;
     lasers.push(instFromCatalog(cat, true));
@@ -909,7 +943,6 @@ function addFromCatalog(){
   sortLasers(); recompute();
 }
 document.getElementById('addBtn').addEventListener('click', addFromCatalog);
-document.getElementById('refW').addEventListener('input', ()=>recompute());
 document.getElementById('viewDist').addEventListener('input', ()=>recompute());
 document.querySelectorAll('.mode-toggle button').forEach(b=>{
   b.addEventListener('click', ()=>{
