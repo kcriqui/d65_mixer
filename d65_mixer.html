@@ -216,6 +216,25 @@
   .halo-note b { color: var(--warn); }
   .halo-note.hidden { display: none; }
 
+  /* Probe mix + hardware map */
+  .probe-mix { margin-top: 12px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  .probe-mix .pm { white-space: nowrap; }
+  .probe-mix .pm b { color: var(--text); font-weight: 600; }
+  .hw-map { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .hw-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--muted); }
+  .hw-chip b { color: var(--text); font-weight: 600; }
+  #hwPill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+  #hwPill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+
+  /* Diagram view toggle */
+  .view-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .view-toggle button {
+    padding: 5px 12px; border-radius: 7px; cursor: pointer; font-size: 12.5px; font-weight: 550;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--line-strong);
+  }
+  .view-toggle button.active { background: var(--accent); color: #05201d; border-color: var(--accent); }
+  .view-note { font-size: 11.5px; color: var(--faint); margin-left: auto; text-align: right; }
+
   /* Best subset finder */
   .finder-desc { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
   .finder-btns { display: flex; gap: 8px; }
@@ -272,39 +291,45 @@
 
   <div class="layout">
     <div class="card diagram-card">
+      <div class="view-toggle">
+        <button data-view="hue" class="active">Hue</button>
+        <button data-view="bright">Brightness</button>
+        <span class="view-note" id="viewNote"></span>
+      </div>
       <div class="diagram-wrap">
         <canvas id="cie" width="720" height="760"></canvas>
       </div>
       <div class="diagram-hint">
-        <span>◇ drag a laser point along the spectral edge · ● D65 target · shaded area = reproducible gamut</span>
+        <span id="diagHint">◇ drag a laser point along the spectral edge · ● D65 · hover to probe a color · shaded = reproducible gamut</span>
       </div>
     </div>
 
     <div class="rail">
-      <div class="card section" id="statusCard">
-        <h2>White Mix <span class="pill" id="targetPill">target · D65</span></h2>
+      <div class="card section" id="probeCard">
+        <h2>Color Probe <span class="pill" id="probePill">D65 · white</span></h2>
         <div class="status">
-          <div class="status-swatch" id="mixSwatch"></div>
+          <div class="status-swatch" id="probeSwatch"></div>
           <div class="status-text">
-            <div class="verdict" id="verdict">—</div>
-            <div class="detail" id="verdictDetail">—</div>
+            <div class="verdict" id="probeVerdict">—</div>
+            <div class="detail" id="probeDetail">Hover the diagram to read any color — its power mix and brightness.</div>
           </div>
         </div>
         <div class="readout-grid" style="margin-top:14px;">
-          <div class="ro"><span class="k">Mix chromaticity</span><span class="v mono" id="mixXY">—</span></div>
-          <div class="ro"><span class="k">Distance to D65</span><span class="v mono" id="mixDist">—</span></div>
+          <div class="ro"><span class="k">Chromaticity</span><span class="v mono" id="probeXY">—</span></div>
+          <div class="ro"><span class="k">Beam brightness</span><span class="v mono" id="probeLm">—</span></div>
         </div>
+        <div class="probe-mix mono" id="probeMix"></div>
       </div>
 
       <div class="card section" id="beamCard">
-        <h2>Beam Output <span class="pill">white at max power</span></h2>
+        <h2>White Beam Output <span class="pill">at max power</span></h2>
         <div class="readout-grid">
-          <div class="ro"><span class="k">White luminous output</span><span class="v mono" id="outLumens">—</span></div>
+          <div class="ro"><span class="k">Beam brightness</span><span class="v mono" id="outLumens">—</span></div>
           <div class="ro"><span class="k">Limiting laser</span><span class="v mono" id="outLimit">—</span></div>
           <div class="ro"><span class="k">Total optical power</span><span class="v mono" id="outPower">—</span></div>
           <div class="ro"><span class="k">Efficiency</span><span class="v mono" id="outEff">—</span></div>
         </div>
-        <div class="mode-note" style="margin-top:12px;">Each line is scaled up until the <b>limiting laser</b> hits its max power (set <span class="mono">max W</span> per laser). Luminous output weights radiant watts by the eye's response — where the gamut triangle can't: green carries most of the lumens.</div>
+        <div class="mode-note" id="beamNote" style="margin-top:12px;">Each line scales up until the <b>limiting laser</b> hits its max power (set <span class="mono">max W</span> per laser). Brightness weights radiant watts by eye response and the viewing medium — where the gamut triangle can't.</div>
       </div>
 
       <div class="card section">
@@ -321,6 +346,11 @@
             <button id="modeRaw" class="active" data-mode="raw">Raw power</button>
             <button id="modeBeam" data-mode="beam">Beam-corrected</button>
           </div>
+          <div class="mode-toggle medium-toggle" role="tablist" title="How the beam is viewed — sets brightness weighting">
+            <button data-medium="screen">Screen</button>
+            <button data-medium="fog" class="active">Fog</button>
+            <button data-medium="haze">Haze</button>
+          </div>
           <div class="ctrl-fields">
             <div class="ctrl-field">
               <label for="viewDist">Viewing distance</label>
@@ -335,6 +365,16 @@
           <select class="catalog-select" id="catalogSelect"></select>
           <button class="add-btn" id="addBtn">+ Add</button>
         </div>
+      </div>
+
+      <div class="card section" id="hwCard">
+        <h2>Hardware <span class="pill" id="hwPill">—</span></h2>
+        <div class="readout-grid">
+          <div class="ro"><span class="k">Color channels</span><span class="v mono" id="hwCh">—</span></div>
+          <div class="ro"><span class="k">Required DAC</span><span class="v mono" id="hwDac">—</span></div>
+        </div>
+        <div class="hw-map" id="hwMap"></div>
+        <div class="mode-note" id="hwNote"></div>
       </div>
 
       <div class="card section">
@@ -474,17 +514,18 @@ const STD = {
   "Rec.2020":{ sub:"UHD", tri:[[0.708,0.292],[0.170,0.797],[0.131,0.046]], color:"#e0a020" },
 };
 
-/* ---------- white-mix solver: non-negative optical powers → D65 ---------- */
+/* ---------- mix solver: non-negative optical powers → a target chromaticity ---------- */
 // Two lasers: the achievable chromaticities are exactly the segment between the
-// two primary points, so the best white is the closest point on that segment to D65.
-function solvePair(cols){
+// two primary points, so the closest reachable colour is the nearest point on it.
+function solvePair(cols, target){
+  const T = target || D65;
   const S=[cols[0][0]+cols[0][1]+cols[0][2], cols[1][0]+cols[1][1]+cols[1][2]];
   const xy1=[cols[0][0]/S[0], cols[0][1]/S[0]];
   const xy2=[cols[1][0]/S[1], cols[1][1]/S[1]];
   const dx=xy2[0]-xy1[0], dy=xy2[1]-xy1[1], L2=dx*dx+dy*dy;
-  let t = L2>1e-12 ? ((D65[0]-xy1[0])*dx+(D65[1]-xy1[1])*dy)/L2 : 0;
+  let t = L2>1e-12 ? ((T[0]-xy1[0])*dx+(T[1]-xy1[1])*dy)/L2 : 0;
   t=Math.max(0,Math.min(1,t));
-  const d=xy=>Math.hypot(xy[0]-D65[0], xy[1]-D65[1]);
+  const d=xy=>Math.hypot(xy[0]-T[0], xy[1]-T[1]);
   if(t<=1e-6)   return {powers:[1,0], mix:xy1, dist:d(xy1)};
   if(t>=1-1e-6) return {powers:[0,1], mix:xy2, dist:d(xy2)};
   const C=[xy1[0]+t*dx, xy1[1]+t*dy];
@@ -494,18 +535,19 @@ function solvePair(cols){
                                : (C[1]*S[0]-cols[0][1])/(cols[1][1]-C[1]*S[1]);
   return {powers:[1, Math.max(0,r)], mix:C, dist:d(C)};
 }
-function solveWhite(lasers){
+function solveWhite(lasers, target){
+  const T = target || D65;
   const n = lasers.length;
   if(n===0) return {powers:[], mix:null, dist:Infinity};
   const cols = lasers.map(l => cmfAt(l.wl)); // [X,Y,Z] per unit power
-  if(n===2) return solvePair(cols);          // exact closest-to-D65 on the 2-laser segment
+  if(n===2) return solvePair(cols, T);       // exact closest point on the 2-laser segment
   const Wc = 60;
   // rows: chroma-x, chroma-y (weighted), luminance normalization
   const A = [[],[],[]], b=[0,0,1];
   for(let i=0;i<n;i++){
     const [X,Y,Z]=cols[i], S=X+Y+Z;
-    A[0][i]=Wc*(X - D65[0]*S);
-    A[1][i]=Wc*(Y - D65[1]*S);
+    A[0][i]=Wc*(X - T[0]*S);
+    A[1][i]=Wc*(Y - T[1]*S);
     A[2][i]=Y;
   }
   // Normal equations
@@ -530,7 +572,7 @@ function solveWhite(lasers){
   // Resulting chromaticity
   let X=0,Y=0,Z=0; for(let i=0;i<n;i++){ X+=P[i]*cols[i][0]; Y+=P[i]*cols[i][1]; Z+=P[i]*cols[i][2]; }
   const s=X+Y+Z; const mix = s>1e-9 ? [X/s, Y/s] : null;
-  const dist = mix ? Math.hypot(mix[0]-D65[0], mix[1]-D65[1]) : Infinity;
+  const dist = mix ? Math.hypot(mix[0]-T[0], mix[1]-T[1]) : Infinity;
   return {powers:P, mix, dist};
 }
 
@@ -607,6 +649,23 @@ function spotDia(l){ return l.diam + viewDistM() * l.diverg; }
 // geometry factor mapping on-axis amount → radiant watts (∝ spot area)
 function geomFactor(l){ return mixMode==='beam' ? spotDia(l)*spotDia(l) : 1; }
 
+/* ---------- viewing medium (brightness weighting) ---------- */
+let medium = 'fog';    // 'screen' | 'fog' | 'haze'
+// Relative apparent-brightness multiplier for a beam viewed through the medium.
+// Screen & fog (Mie) are wavelength-neutral; haze (Rayleigh ∝ 1/λ⁴) boosts short λ.
+function scatter(wl){
+  if(medium==='haze'){ const r=555/wl; return r*r*r*r; }
+  return 1;
+}
+// Apparent luminous output (lm, relative index in haze) of `watts` radiant at wl.
+function apparentLm(wl, watts){ return 683 * cmfAt(wl)[1] * scatter(wl) * watts; }
+const fmtLm = lm => lm>=1000 ? (lm/1000).toFixed(1)+'k lm' : Math.round(lm)+' lm';
+
+/* ---------- probe + diagram view ---------- */
+let probeC = D65.slice();   // chromaticity under the cursor (defaults to D65)
+let viewMode = 'hue';       // 'hue' | 'bright'
+let lastSol = null, lastHull = [];   // cached for lightweight redraws (hover)
+
 /* ---------- canvas / rendering ---------- */
 const canvas = document.getElementById('cie');
 const ctx = canvas.getContext('2d');
@@ -667,8 +726,11 @@ function draw(sol, hull){
   ctx.textAlign='right'; ctx.textBaseline='middle';
   for(let gy=0.1; gy<=0.8; gy+=0.1) ctx.fillText(gy.toFixed(1), sx(0)-3*DPR, sy(gy));
 
-  // colored locus
-  if(bgCache) ctx.putImageData(bgCache, 0, 0);
+  // gamut fill: hue background, or brightness heatmap in Brightness view
+  if(viewMode==='bright'){
+    if(brightDirty && dragId==null){ computeBrightField(); brightDirty=false; }
+    if(brightCanvas){ ctx.imageSmoothingEnabled=true; ctx.drawImage(brightCanvas, 0, 0, W, H); }
+  } else if(bgCache){ ctx.putImageData(bgCache, 0, 0); }
 
   // locus outline + line of purples
   ctx.strokeStyle = lineCol; ctx.lineWidth=1.2*DPR; ctx.beginPath();
@@ -732,6 +794,13 @@ function draw(sol, hull){
     ctx.fillStyle=chromaToCss(p[0],p[1]); ctx.fill();
     ctx.strokeStyle= l.id===dragId ? cssVar('--accent') : '#000'; ctx.lineWidth=(l.id===dragId?2.5:1.5)*DPR; ctx.stroke();
   });
+
+  // probe marker (color under cursor)
+  if(probeC){
+    const qx=sx(probeC[0]), qy=sy(probeC[1]);
+    ctx.beginPath(); ctx.arc(qx,qy,7*DPR,0,7); ctx.strokeStyle=cssVar('--accent'); ctx.lineWidth=2*DPR; ctx.stroke();
+    ctx.beginPath(); ctx.arc(qx,qy,1.6*DPR,0,7); ctx.fillStyle=cssVar('--accent'); ctx.fill();
+  }
 }
 
 /* ---------- recompute + render everything ---------- */
@@ -744,6 +813,7 @@ function recompute(){
   const powerById = {};
   const totalP = sol.powers.reduce((a,b)=>a+b,0) || 1;
   active.forEach((l,i)=> powerById[l.id] = sol.powers[i] || 0);
+  lastSol = sol; lastHull = hull; brightDirty = true;
   draw(sol, hull);
   renderRail(sol, hull, powerById, totalP);
 }
@@ -772,35 +842,107 @@ function updateHalo(){
     + `White holds on-axis, but the ${mxL.wl} nm line over-fills the edges and tints the surrounding halo.`;
 }
 
+/* ---------- color probe (color under the cursor) ---------- */
+function renderProbe(){
+  const active = activeLasers(), C = probeC;
+  const verdict=document.getElementById('probeVerdict'), detail=document.getElementById('probeDetail');
+  const isD65 = Math.abs(C[0]-D65[0])<1e-6 && Math.abs(C[1]-D65[1])<1e-6;
+  document.getElementById('probePill').textContent = isD65 ? 'D65 · white' : `x ${C[0].toFixed(3)} y ${C[1].toFixed(3)}`;
+  document.getElementById('probeXY').textContent = `x ${C[0].toFixed(4)}  y ${C[1].toFixed(4)}`;
+  document.getElementById('probeSwatch').style.background = chromaToCss(C[0], C[1]);
+  const mixEl=document.getElementById('probeMix'), lmEl=document.getElementById('probeLm');
+  if(active.length<1){
+    verdict.textContent='—'; verdict.className='verdict';
+    detail.textContent='Add lasers to explore reproducible colors.';
+    lmEl.textContent='—'; mixEl.innerHTML=''; return;
+  }
+  const hull=convexHull(active.map(l=>xyOfWavelength(l.wl)));
+  if(!(hull.length>=3 && pointInPoly(C, hull))){
+    verdict.textContent='Outside gamut'; verdict.className='verdict off';
+    detail.textContent='These primaries cannot reproduce this color.';
+    lmEl.textContent='—'; mixEl.innerHTML=''; return;
+  }
+  const sol=solveWhite(active, C);
+  let k=Infinity;
+  active.forEach((l,i)=>{ const need=sol.powers[i]*geomFactor(l), cap=Math.max(1e-6,l.pmax||0); if(need>1e-9){const kk=cap/need; if(kk<k)k=kk;} });
+  if(!isFinite(k)) k=0;
+  let bright=0; const parts=[];
+  active.forEach((l,i)=>{ const aw=k*sol.powers[i]*geomFactor(l); bright+=apparentLm(l.wl,aw); if(aw>1e-4) parts.push(`<span class="pm"><b>${l.wl}</b> ${aw.toFixed(2)}W</span>`); });
+  verdict.textContent = isD65 ? 'D65 white ✓' : 'In gamut ✓'; verdict.className='verdict ok';
+  detail.textContent='Max brightness here, and the power mix to make it:';
+  lmEl.textContent = fmtLm(bright);
+  mixEl.innerHTML = parts.join('');
+}
+
+/* ---------- hardware target (ILDA / DAC channels) ---------- */
+function renderHardware(){
+  const active = activeLasers(), n = active.length;
+  const pill=document.getElementById('hwPill'), map=document.getElementById('hwMap'), note=document.getElementById('hwNote');
+  const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  setTxt('hwCh', String(n));
+  if(n===0){ pill.textContent='—'; pill.className='pill'; setTxt('hwDac','—'); map.innerHTML=''; note.textContent=''; return; }
+  const band = wl => wl<=445?'Deep-Blue':wl<=475?'Blue':wl<=505?'Cyan':wl<=560?'Green':wl<=595?'Yellow':'Red';
+  map.innerHTML = active.slice().sort((a,b)=>a.wl-b.wl).map(l=>`<span class="hw-chip"><b>${l.wl}</b> → ${band(l.wl)}</span>`).join('');
+  let dac, cls, msg;
+  if(n<=3){ dac='Any RGB DAC (Helios / Ether Dream / FB4)'; cls='ok'; msg='Fits a standard 3-color ILDA path.'; }
+  else if(n<=6){ dac='FB4 or Lasergraph DSP (6-color)'; cls='ok'; msg=`${n} colors need dedicated DAC outputs (e.g. FB4 Color 4–${Math.min(n,6)}) — a plain 3-wire RGB ILDA feed can't light the extras.`; }
+  else { dac='⚠ exceeds 6 — needs 2× DAC / projector'; cls='warn'; msg=`${n} colors exceed the 6-channel ILDA/FB4 ceiling; split across two DACs or projectors.`; }
+  pill.textContent = n<=3?'RGB':(n<=6?'multi-color':'over 6'); pill.className='pill '+cls;
+  setTxt('hwDac', dac); note.textContent = msg;
+}
+
+/* ---------- brightness heatmap (max achievable brightness across the gamut) ---------- */
+let brightCanvas=null, brightDirty=true;
+function brightRamp(t){ // 0..1 → dark → teal → warm-white
+  const stops=[[13,16,26],[28,72,90],[55,224,207],[245,242,200]];
+  t=Math.max(0,Math.min(1,t)); const s=t*3, i=Math.min(2,Math.floor(s)), f=s-i;
+  const a=stops[i], b=stops[i+1];
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+}
+function maxBrightAt(C, P){ // P = prepared arrays; returns apparent brightness at chromaticity C
+  const n=P.n, Wc=60, A0=P.A0, A1=P.A1, A2=P.A2;
+  for(let i=0;i<n;i++){ const S=P.S[i]; A0[i]=Wc*(P.X[i]-C[0]*S); A1[i]=Wc*(P.Y[i]-C[1]*S); A2[i]=P.Y[i]; }
+  const AtA=P.AtA, Atb=P.Atb;
+  for(let i=0;i<n;i++){ for(let j=0;j<n;j++) AtA[i][j]=A0[i]*A0[j]+A1[i]*A1[j]+A2[i]*A2[j]; Atb[i]=A2[i]; }
+  let L=1e-6; for(let i=0;i<n;i++) L+=AtA[i][i]; const step=1/L;
+  const Pw=P.Pw; for(let i=0;i<n;i++) Pw[i]=1/n;
+  for(let it=0; it<110; it++){ for(let i=0;i<n;i++){ let s=-Atb[i]; for(let j=0;j<n;j++) s+=AtA[i][j]*Pw[j]; Pw[i]=Math.max(0,Pw[i]-step*s); } }
+  let k=Infinity; for(let i=0;i<n;i++){ const need=Pw[i]*P.geom[i]; if(need>1e-9){ const kk=P.cap[i]/need; if(kk<k)k=kk; } }
+  if(!isFinite(k)) return 0;
+  let b=0; for(let i=0;i<n;i++) b+=P.w[i]*k*Pw[i]*P.geom[i];
+  return b;
+}
+function computeBrightField(){
+  const active=activeLasers();
+  if(active.length<1){ brightCanvas=null; return; }
+  const hull=convexHull(active.map(l=>xyOfWavelength(l.wl)));
+  if(hull.length<3){ brightCanvas=null; return; }
+  const GW=120, GH=Math.round(GW*(Y_MAX-Y_MIN)/(X_MAX-X_MIN));
+  const n=active.length;
+  const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
+            AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
+  active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
+    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*c[1]*scatter(l.wl)); });
+  const field=new Float64Array(GW*GH); let fmax=1e-9;
+  for(let gy=0; gy<GH; gy++){
+    const y = Y_MAX - (gy+0.5)/GH*(Y_MAX-Y_MIN);
+    for(let gx=0; gx<GW; gx++){
+      const x = X_MIN + (gx+0.5)/GW*(X_MAX-X_MIN);
+      if(!pointInPoly([x,y], hull)) continue;
+      const b=maxBrightAt([x,y], P); field[gy*GW+gx]=b; if(b>fmax) fmax=b;
+    }
+  }
+  const off=document.createElement('canvas'); off.width=GW; off.height=GH;
+  const octx=off.getContext('2d'); const img=octx.createImageData(GW,GH); const d=img.data;
+  for(let i=0;i<GW*GH;i++){ const b=field[i]; if(b<=0){ d[i*4+3]=0; continue; }
+    const rgb=brightRamp(b/fmax); d[i*4]=rgb[0]; d[i*4+1]=rgb[1]; d[i*4+2]=rgb[2]; d[i*4+3]=245; }
+  octx.putImageData(img,0,0); brightCanvas=off;
+}
+
 function renderRail(sol, hull, powerById, totalP){
   const nActive = activeLasers().length;
   document.getElementById('countPill').textContent = `${nActive} on · ${lasers.length}`;
-  // status
-  const dist = sol.dist;
-  const verdict=document.getElementById('verdict'), detail=document.getElementById('verdictDetail');
-  const swatch=document.getElementById('mixSwatch');
-  if(sol.mix){
-    swatch.style.background = mixToCss(sol.mix[0], sol.mix[1]);
-    document.getElementById('mixXY').textContent = `x ${sol.mix[0].toFixed(4)}  y ${sol.mix[1].toFixed(4)}`;
-    document.getElementById('mixDist').textContent = 'Δ ' + dist.toFixed(4);
-  } else {
-    swatch.style.background = 'var(--panel-2)';
-    document.getElementById('mixXY').textContent = '—';
-    document.getElementById('mixDist').textContent = '—';
-  }
-  if(nActive < 2){
-    verdict.textContent='Select ≥ 2 lines'; verdict.className='verdict off';
-    detail.textContent='Check at least two wavelengths to mix white.';
-  } else if(dist < 0.0045){
-    verdict.textContent='Perfect white ✓'; verdict.className='verdict ok';
-    detail.textContent='These lines blend to D65 at the powers below.';
-  } else if(dist < 0.02){
-    verdict.textContent='Near white'; verdict.className='verdict near';
-    detail.textContent='Closest reachable point is slightly off D65.';
-  } else {
-    verdict.textContent='Cannot reach white'; verdict.className='verdict off';
-    detail.textContent='D65 lies outside these primaries — add or shift a line.';
-  }
+  const dist = sol.dist;   // how close the D65-white build actually lands
 
   // White build: relative required radiant watts (on-axis amount × geometry), then
   // scale the whole set up until the first laser reaches its max power.
@@ -813,10 +955,8 @@ function renderRail(sol, hull, powerById, totalP){
     if(need > 1e-9){ const k = cap/need; if(k < kMax){ kMax = k; limitId = l.id; } }
   });
   if(!isFinite(kMax)) kMax = 0;
-  const ybar = wl => cmfAt(wl)[1];                       // photopic luminous efficiency V(λ)
-  const fmtLm = lm => lm>=1000 ? (lm/1000).toFixed(1)+'k lm' : Math.round(lm)+' lm';
   let totalLm = 0, totalW = 0;
-  active.forEach(l=>{ const aw = kMax*reqW[l.id]; totalW += aw; totalLm += 683*ybar(l.wl)*aw; });
+  active.forEach(l=>{ const aw = kMax*reqW[l.id]; totalW += aw; totalLm += apparentLm(l.wl, aw); });
   const z = viewDistM();
 
   laserList.innerHTML='';
@@ -825,7 +965,7 @@ function renderRail(sol, hull, powerById, totalP){
     const actualW = l.on ? kMax*reqW[l.id] : 0;
     const cap = l.pmax||0;
     const pctMax = (l.on && cap>0) ? Math.min(100, actualW/cap*100) : 0;
-    const lumens = l.on ? 683*ybar(l.wl)*actualW : 0;
+    const lumens = l.on ? apparentLm(l.wl, actualW) : 0;
     const isLimit = l.on && l.id===limitId;
     const valHtml = l.on ? `${actualW.toFixed(2)} W<span class="w"> · ${fmtLm(lumens)}</span>` : '—';
     const spot = spotDia(l);
@@ -860,14 +1000,24 @@ function renderRail(sol, hull, powerById, totalP){
   // Beam Output summary
   const limitL = active.find(l=>l.id===limitId);
   const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  const beamNote=document.getElementById('beamNote');
   if(active.length>=2 && kMax>0){
     setTxt('outLumens', fmtLm(totalLm));
     setTxt('outLimit', limitL ? `${limitL.wl} nm` : '—');
     setTxt('outPower', totalW.toFixed(2)+' W');
     setTxt('outEff', totalW>0 ? Math.round(totalLm/totalW)+' lm/W' : '—');
+    if(beamNote){
+      const white = dist<0.0045 ? `mixes to true D65 white (Δ ${dist.toFixed(4)})`
+                  : dist<0.02  ? `slightly off D65 (Δ ${dist.toFixed(3)}) — nudge a line for neutral white`
+                  : `cannot reach D65 (closest Δ ${dist.toFixed(3)}) — not a true white`;
+      beamNote.innerHTML = `Scaled until the <b>limiting laser</b> hits its max power; brightness weights watts by eye response and medium. This set ${white}.`;
+    }
   } else {
     ['outLumens','outLimit','outPower','outEff'].forEach(id=>setTxt(id,'—'));
+    if(beamNote) beamNote.textContent = 'Select at least two lasers to size a white beam.';
   }
+  renderHardware();
+  renderProbe();
   updateHalo();
   updateModeNote();
 
@@ -944,11 +1094,27 @@ function addFromCatalog(){
 }
 document.getElementById('addBtn').addEventListener('click', addFromCatalog);
 document.getElementById('viewDist').addEventListener('input', ()=>recompute());
-document.querySelectorAll('.mode-toggle button').forEach(b=>{
+document.querySelectorAll('#modeRaw, #modeBeam').forEach(b=>{
   b.addEventListener('click', ()=>{
     mixMode=b.dataset.mode;
-    document.querySelectorAll('.mode-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    document.querySelectorAll('#modeRaw, #modeBeam').forEach(x=>x.classList.toggle('active', x===b));
     recompute();
+  });
+});
+document.querySelectorAll('.medium-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    medium=b.dataset.medium;
+    document.querySelectorAll('.medium-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    recompute();
+  });
+});
+document.querySelectorAll('.view-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    viewMode=b.dataset.view;
+    document.querySelectorAll('.view-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    document.getElementById('viewNote').textContent = viewMode==='bright' ? 'max achievable brightness across the gamut' : '';
+    brightDirty = true;
+    if(lastSol) draw(lastSol, lastHull); else recompute();
   });
 });
 
@@ -1096,7 +1262,11 @@ canvas.addEventListener('touchmove', onMove, {passive:false});
 canvas.addEventListener('touchend', onUp);
 canvas.addEventListener('mousemove', e=>{
   if(dragId!=null) return;
-  const [px,py]=eventXY(e); canvas.style.cursor = nearestLaser(px,py)?'grab':'crosshair';
+  const [px,py]=eventXY(e);
+  canvas.style.cursor = nearestLaser(px,py) ? 'grab' : 'crosshair';
+  probeC = [invX(px), invY(py)];
+  renderProbe();
+  if(lastSol) draw(lastSol, lastHull);   // refresh the probe marker
 });
 
 /* theme + resize */
