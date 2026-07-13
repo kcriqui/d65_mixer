@@ -5,7 +5,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 460,
-    "power_W": null,
+    "power_W": 2,
     "diam": 1,
     "diverg": 0.7
   },
@@ -15,7 +15,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 480,
-    "power_W": null,
+    "power_W": 2,
     "diam": 1,
     "diverg": 0.7
   },
@@ -25,7 +25,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 488,
-    "power_W": null,
+    "power_W": 3,
     "diam": 1,
     "diverg": 0.7
   },
@@ -35,7 +35,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 514,
-    "power_W": null,
+    "power_W": 1,
     "diam": 1,
     "diverg": 0.7
   },
@@ -45,7 +45,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 532,
-    "power_W": null,
+    "power_W": 5,
     "diam": 1,
     "diverg": 0.7
   },
@@ -55,7 +55,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 561,
-    "power_W": null,
+    "power_W": 0.5,
     "diam": 1,
     "diverg": 0.7
   },
@@ -65,7 +65,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 577,
-    "power_W": null,
+    "power_W": 3,
     "diam": 1,
     "diverg": 0.7
   },
@@ -75,7 +75,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 590,
-    "power_W": null,
+    "power_W": 2,
     "diam": 1,
     "diverg": 0.7
   },
@@ -85,7 +85,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 607,
-    "power_W": null,
+    "power_W": 0.5,
     "diam": 1,
     "diverg": 1.5
   },
@@ -95,7 +95,7 @@
     "type": "OPSL",
     "mode": "STM",
     "wl": 639,
-    "power_W": null,
+    "power_W": 1,
     "diam": 1,
     "diverg": 1.5
   },
@@ -105,7 +105,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 460,
-    "power_W": null,
+    "power_W": 2,
     "diam": 1.5,
     "diverg": 1.4
   },
@@ -115,7 +115,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 480,
-    "power_W": null,
+    "power_W": 4,
     "diam": 1.6,
     "diverg": 1.5
   },
@@ -125,7 +125,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 488,
-    "power_W": null,
+    "power_W": 5,
     "diam": 1.6,
     "diverg": 1.5
   },
@@ -135,7 +135,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 514,
-    "power_W": null,
+    "power_W": 5,
     "diam": 1.8,
     "diverg": 1.4
   },
@@ -145,7 +145,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 532,
-    "power_W": null,
+    "power_W": 8,
     "diam": 1.8,
     "diverg": 1.4
   },
@@ -155,7 +155,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 561,
-    "power_W": null,
+    "power_W": 2,
     "diam": 1.8,
     "diverg": 1.4
   },
@@ -165,7 +165,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 577,
-    "power_W": null,
+    "power_W": 5,
     "diam": 1.8,
     "diverg": 1.4
   },
@@ -175,7 +175,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 590,
-    "power_W": null,
+    "power_W": 3,
     "diam": 1.8,
     "diverg": 1.4
   },
@@ -185,7 +185,7 @@
     "type": "OPSL",
     "mode": "MTM",
     "wl": 639,
-    "power_W": null,
+    "power_W": 5,
     "diam": 1.5,
     "diverg": 1.5
   },

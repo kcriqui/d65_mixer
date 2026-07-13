@@ -1,0 +1,118 @@
+{
+  "_comment": "Commercially available dichroic filters for combining visible laser lines (~460-660 nm) onto one collinear beam at ~45deg AOI. Researched 2026-07-13 from vendor datasheets. transmit_pct = transmission in the pass band; reflect_pct = reflection in the reflect band (datasheet spec thresholds, often '>' minimums). null = not published / quote-only. Notch/bandpass are 0deg-AOI clean-up parts, not 45deg combiners (aoi_deg 0, combining false). generic_defaults.* is the average of the 45deg combining edge-dichroic product lines with published %T/%R, used as the Beam Combining tile's default efficiencies.",
+  "generic_defaults": {
+    "transmit_pct": 91,
+    "reflect_pct": 95,
+    "derived_from": "average of products where aoi_deg==45 && combining==true && transmit_pct!=null && reflect_pct!=null"
+  },
+  "sources": [
+    "https://www.newport.com/f/dichroic-laser-beam-combiners",
+    "https://www.edmundoptics.com/f/dichroic-laser-beam-combiners-8f67c2b5/14451",
+    "https://www.idex-hs.com/capabilities/semrock-optical-filters/applications/combining-or-separating-laser-beams",
+    "https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=3313",
+    "https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9240",
+    "https://www.edmundoptics.com/f/dichroic-longpass-filters/14288/",
+    "https://www.edmundoptics.com/f/dichroic-shortpass-filters/14198/",
+    "https://alluxa.com/optical-filters-category/dichroic-beamsplitter/single-edge/",
+    "https://www.chroma.com/products/part/zt405-488-561-640rpc",
+    "https://www.iridian.ca/specialty-filters/beam-combiner-filters/"
+  ],
+  "products": [
+    {
+      "vendor": "Newport", "family": "Dichroic Laser Beam Combiner (DCM)", "parts": ["DCM10","DCM11","DCM12","DCM13","DCM14","DCM15"],
+      "type": "dichroic-combiner", "subtype": "longpass", "combining": true, "aoi_deg": 45,
+      "edges_nm": [427, 466, 503, 552, 613, 659],
+      "reflect_bands_nm": [[372,415],[439,458],[473,491],[515,544],[561,594],[633,647]],
+      "transmit_bands_nm": [[439,647],[473,647],[514,647],[561,790],[633,790],[671,790]],
+      "transmit_pct": 95, "reflect_pct": 98, "price_usd": 370, "price_note": "each, published",
+      "url": "https://www.newport.com/f/dichroic-laser-beam-combiners",
+      "notes": "IBS coating, polarization-insensitive. Reflect bands are narrow/line-specific. In stock, priced - cleanest buy of the standard combiner set."
+    },
+    {
+      "vendor": "Edmund Optics", "family": "TECHSPEC Dichroic Laser Beam Combiner", "parts": ["86-391","86-392","86-393","86-394","86-395","86-397"],
+      "type": "dichroic-combiner", "subtype": "longpass", "combining": true, "aoi_deg": 45,
+      "edges_nm": [427, 466, 480, 503, 552, 613, 659],
+      "transmit_pct": 95, "reflect_pct": 98, "price_usd": 297, "price_note": "25 mm, qty 1; ~$234 at 26+; 50 mm ~$720",
+      "url": "https://www.edmundoptics.com/f/dichroic-laser-beam-combiners-8f67c2b5/14451",
+      "notes": "Fused silica, hard sputtered, polarization insensitive. Same design as Newport DCM / Semrock LaserMUX. LIDT 1 J/cm2 @532nm."
+    },
+    {
+      "vendor": "Semrock (IDEX)", "family": "LaserMUX", "parts": ["LM01-427-25","LM01-466-25","LM01-503-25","LM01-552-25","LM01-613-25","LM01-659-25"],
+      "type": "dichroic-combiner", "subtype": "longpass", "combining": true, "aoi_deg": 45,
+      "edges_nm": [427, 466, 503, 552, 613, 659],
+      "transmit_pct": 95, "reflect_pct": 98, "price_usd": null, "price_note": "quote only; several individual SKUs flagged obsolete on IDEX store",
+      "url": "https://www.idex-hs.com/capabilities/semrock-optical-filters/applications/combining-or-separating-laser-beams",
+      "notes": "Purpose-built LaserMUX; edge shift 0.35%/deg. Publishes per-line s/p absolute specs. Newer 16-line LaserMUX set exists - verify current SKUs."
+    },
+    {
+      "vendor": "Thorlabs", "family": "DMLP Longpass Dichroic Mirror/Beamsplitter", "parts": ["DMLP425","DMLP490","DMLP505","DMLP550","DMLP567","DMLP605","DMLP650"],
+      "type": "longpass-dichroic", "combining": true, "aoi_deg": 45,
+      "edges_nm": [425, 490, 505, 550, 567, 605, 650],
+      "transmit_pct": 90, "reflect_pct": 90, "price_usd": 165, "price_note": "DMLP567 O1in; family ~$150-260",
+      "url": "https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=3313",
+      "notes": "UV fused silica, IBS hard coat. Broadband (reflect below cut-on, transmit above). Polarization splits the edge at 45deg."
+    },
+    {
+      "vendor": "Thorlabs", "family": "DMSP Shortpass Dichroic Mirror/Beamsplitter", "parts": ["DMSP425","DMSP490","DMSP505","DMSP550","DMSP567","DMSP605","DMSP650"],
+      "type": "shortpass-dichroic", "combining": true, "aoi_deg": 45,
+      "edges_nm": [425, 490, 505, 550, 567, 605, 650],
+      "transmit_pct": 90, "reflect_pct": 90, "price_usd": null, "price_note": "~$150-260",
+      "url": "https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9240",
+      "notes": "Complement of DMLP (transmit short, reflect long). Same substrate/coating."
+    },
+    {
+      "vendor": "Edmund Optics", "family": "TECHSPEC Dichroic Longpass Edge Filter", "parts": ["69-867","69-880"],
+      "type": "longpass-dichroic", "combining": true, "aoi_deg": 45,
+      "edges_nm": [400, 450, 500, 550, 600, 650, 700, 750],
+      "transmit_pct": 85, "reflect_pct": 97, "price_usd": 143, "price_note": "12.5 mm; 8-filter kit #44027",
+      "url": "https://www.edmundoptics.com/f/dichroic-longpass-filters/14288/",
+      "notes": "Broadband edge dichroic, hard coated, low polarization dependence. Cheaper/broader than the combiner set."
+    },
+    {
+      "vendor": "Edmund Optics", "family": "TECHSPEC Dichroic Shortpass Edge Filter", "parts": ["69-178"],
+      "type": "shortpass-dichroic", "combining": true, "aoi_deg": 45,
+      "edges_nm": [400, 450, 500, 550, 600, 650, 700, 750],
+      "transmit_pct": 85, "reflect_pct": 97, "price_usd": 140, "price_note": "12.5 mm; 8-filter kit #44029 ~$1387",
+      "url": "https://www.edmundoptics.com/f/dichroic-shortpass-filters/14198/",
+      "notes": "Complement of the longpass edge filter."
+    },
+    {
+      "vendor": "Alluxa", "family": "Single-Edge Longpass Dichroic Beamsplitter (stock)",
+      "type": "longpass-dichroic", "combining": true, "aoi_deg": 45,
+      "edges_nm": [409, 454, 494, 507.5, 559, 560, 597, 604, 642, 681],
+      "transmit_pct": null, "reflect_pct": null, "price_usd": null, "price_note": "$258-392 per part (published)",
+      "url": "https://alluxa.com/optical-filters-category/dichroic-beamsplitter/single-edge/",
+      "notes": "Steep-edge, hard-coated (SIRRUS), laser-durable. Only vendor with public part list AND prices. Per-part %T/%R on individual datasheets (not captured)."
+    },
+    {
+      "vendor": "Chroma", "family": "ZT-series Laser Polychroic", "parts": ["ZT405/488/561/640rpc","ZT405/488/532/640rpc","T520lpxr","T560lpxr"],
+      "type": "dichroic-combiner", "subtype": "multi-edge", "combining": true, "aoi_deg": 45,
+      "edges_nm": [405, 488, 532, 561, 640],
+      "transmit_pct": null, "reflect_pct": null, "price_usd": null, "price_note": "quote",
+      "url": "https://www.chroma.com/products/part/zt405-488-561-640rpc",
+      "notes": "Multi-line laser polychroic - reflects several laser lines at once. Ideal if line set matches design lines, else custom."
+    },
+    {
+      "vendor": "Iridian", "family": "Beam Combiner Filters",
+      "type": "dichroic-combiner", "combining": true, "aoi_deg": 45,
+      "edges_nm": [], "transmit_pct": null, "reflect_pct": null, "price_usd": null, "price_note": "quote",
+      "url": "https://www.iridian.ca/specialty-filters/beam-combiner-filters/",
+      "notes": "Explicitly markets 45deg beam combining, custom to any line list. Quote-only. (Also: Materion Balzers, Omega Optical, Knight Optical, Lambda Research - all quote-only custom houses.)"
+    },
+    {
+      "vendor": "Edmund Optics", "family": "OD 4.0 Notch Filter", "parts": ["67-119"],
+      "type": "notch", "combining": false, "aoi_deg": 0,
+      "edges_nm": [532], "notch_fwhm_nm": 26.6,
+      "transmit_pct": 90, "reflect_pct": 99, "price_usd": 465, "price_note": "25 mm",
+      "url": "https://www.edmundoptics.com/p/532nm-25mm-diameter-od-4-notch-filter/21656",
+      "notes": "0deg AOI - reflects a single narrow line, transmits the rest. Edge blue-shifts/broadens if tilted to 45deg. Use for a mid-band line or clean-up, not an ideal 45deg combiner. (Thorlabs NF-series and Alluxa 532 OD6 notches are similar.)"
+    },
+    {
+      "vendor": "laser-show OEM (CivilLaser / Optlaser / eBay)", "family": "RGB combining dichroic set",
+      "type": "dichroic-combiner", "combining": true, "aoi_deg": 45,
+      "edges_nm": [], "transmit_pct": null, "reflect_pct": null, "price_usd": 30, "price_note": "~tens of USD; vendor-claimed specs",
+      "url": "https://www.civillaser.com/index.php?main_page=product_info&products_id=402",
+      "notes": "The literal RGB-projector combining hardware - cheapest by far, but color-labeled (not per-nm), specs are marketing claims, loose tolerances. Fine for hobby, weak for a precision multi-line merge."
+    }
+  ]
+}

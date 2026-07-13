@@ -67,7 +67,7 @@
   }
   .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
 
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 26px 22px 60px; }
+  .wrap { max-width: none; margin: 0 auto; padding: 26px 22px 60px; }
 
   header.top { margin-bottom: 22px; }
   header.top .eyebrow {
@@ -89,7 +89,9 @@
   }
   .diagram-card { padding: 14px; }
   .diagram-wrap { position: relative; width: 100%; }
-  canvas { display: block; width: 100%; height: auto; border-radius: 8px; cursor: crosshair; touch-action: none; }
+  /* Cap the chart size on wide screens (canvas is 720×760, so ~700px wide ≈ 740px tall);
+     max-width keeps the aspect ratio (and pointer hit-testing) intact, centered. */
+  canvas { display: block; width: 100%; max-width: 700px; height: auto; margin: 0 auto; border-radius: 8px; cursor: crosshair; touch-action: none; }
   .diagram-hint { margin-top: 8px; font-size: 12px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
 
   .rail { display: flex; flex-direction: column; gap: 16px; }
@@ -153,7 +155,12 @@
 
   /* Laser chips (compact bank under the chart) */
   .bank-hint { font-size: 11.5px; color: var(--faint); margin: 2px 0 10px; }
-  #laserList { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px; }
+  /* Cap at 3 columns so the laser name fits each chip; drop to 2 then 1 as the CARD narrows
+     (container query responds to the card width, not the window). */
+  #laserCard { container-type: inline-size; }
+  #laserList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  @container (max-width: 600px) { #laserList { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (max-width: 380px) { #laserList { grid-template-columns: 1fr; } }
   .chip {
     display: flex; align-items: center; gap: 8px; min-width: 0;
     padding: 8px 9px; border-radius: 9px; cursor: pointer;
@@ -254,6 +261,28 @@
   .pm-row.total { margin-top: 3px; padding-top: 8px; border-top: 1px solid var(--line); }
   .pm-row.total .pm-wl, .pm-row.total .pm-val { color: var(--text); font-weight: 600; }
   .pm-row.total .pm-fill { background: var(--accent); }
+
+  /* Beam combining tile */
+  .combine-intro { margin: 0 0 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .combine-eff { display: flex; gap: 14px; margin-bottom: 12px; }
+  .combine-eff label { font-size: 11.5px; color: var(--faint); display: inline-flex; align-items: center; gap: 5px; }
+  .combine-eff input { width: 56px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text); border-radius: 6px; padding: 4px 6px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .combine-eff input:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .combine-apply { cursor: pointer; margin-left: auto; }
+  .combine-apply input { accent-color: var(--accent); margin-right: 3px; vertical-align: -1px; }
+  .combine-diagram { margin: 2px 0 14px; overflow-x: auto; }
+  .combine-diagram svg { display: block; max-width: 100%; }
+  .csvg-wl { font-size: 9px; fill: #ccd2de; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .csvg-lbl { font-size: 8px; fill: #9aa2b4; letter-spacing: 0.03em; }
+  .combine-steps { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .cstep { display: grid; grid-template-columns: 40px 74px 1fr; align-items: baseline; gap: 8px; font-size: 12px; }
+  .cstep .cnum { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
+  .cstep .cwl { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .cstep .cdesc { color: var(--muted); }
+  .combine-thru-head { font-size: 11px; color: var(--faint); letter-spacing: 0.02em; margin-bottom: 6px; }
+  .combine-thru-head:empty { display: none; }
+  #combineThru .pm-row.cweak .pm-wl, #combineThru .pm-row.cweak .pm-val { color: var(--accent); font-weight: 650; }
+  .combine-empty { font-size: 11.5px; color: var(--faint); margin: 0; }
 
   /* Diagram view toggle */
   .view-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
@@ -418,6 +447,7 @@
       </div>
       <div class="halo-note hidden" id="haloNote"></div>
     </div>
+
     </div>
 
     <div class="rail">
@@ -462,6 +492,21 @@
           <select class="catalog-select" id="catalogSelect"></select>
           <button class="add-btn" id="addBtn">+ Add</button>
         </div>
+      </div>
+
+      <div class="card section" id="combineCard">
+        <h2>Beam Combining <span class="pill" id="combinePill">—</span></h2>
+        <p class="combine-intro">Suggested cascade order and edge dichroics, arranged so the lowest-PB line crosses the fewest surfaces. Edge (long/short-pass) mirrors only — no notch/bandpass.</p>
+        <div class="combine-eff">
+          <label>Reflect <input id="reflEff" type="number" min="50" max="100" step="0.5" value="95"><span class="u">%</span></label>
+          <label>Transmit <input id="transEff" type="number" min="50" max="100" step="0.5" value="91"><span class="u">%</span></label>
+          <label class="combine-apply" title="Use post-combining watts as each laser's effective power everywhere (chips, totals, brightness, Power map)"><input type="checkbox" id="applyCombined"> Apply to mix</label>
+        </div>
+        <div id="combineDiagram" class="combine-diagram"></div>
+        <div id="combineSteps" class="combine-steps"></div>
+        <div class="combine-thru-head" id="combineThruHead"></div>
+        <div id="combineThru" class="probe-mix"></div>
+        <div class="mode-note" id="combineNote"></div>
       </div>
     </div>
   </div>
@@ -687,25 +732,25 @@ function solveWhite(lasers, target){
    app over it), then run:  node build-data.mjs
    These are the embedded fallbacks used when the JSON can't be fetched (e.g. opened via file://). */
 const BUILTIN_CATALOG = [
-  {"name":"OPSL 460 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":460,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 480 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":480,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 488 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":488,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 514 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":514,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 532 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":532,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 561 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":561,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 577 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":577,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 590 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":590,"power_W":null,"diam":1,"diverg":0.7},
-  {"name":"OPSL 607 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":607,"power_W":null,"diam":1,"diverg":1.5},
-  {"name":"OPSL 639 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":639,"power_W":null,"diam":1,"diverg":1.5},
-  {"name":"OPSL 460 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":460,"power_W":null,"diam":1.5,"diverg":1.4},
-  {"name":"OPSL 480 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":480,"power_W":null,"diam":1.6,"diverg":1.5},
-  {"name":"OPSL 488 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":488,"power_W":null,"diam":1.6,"diverg":1.5},
-  {"name":"OPSL 514 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":514,"power_W":null,"diam":1.8,"diverg":1.4},
-  {"name":"OPSL 532 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":532,"power_W":null,"diam":1.8,"diverg":1.4},
-  {"name":"OPSL 561 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":561,"power_W":null,"diam":1.8,"diverg":1.4},
-  {"name":"OPSL 577 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":577,"power_W":null,"diam":1.8,"diverg":1.4},
-  {"name":"OPSL 590 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":590,"power_W":null,"diam":1.8,"diverg":1.4},
-  {"name":"OPSL 639 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":639,"power_W":null,"diam":1.5,"diverg":1.5},
+  {"name":"OPSL 460 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":460,"power_W":2,"diam":1,"diverg":0.7},
+  {"name":"OPSL 480 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":480,"power_W":2,"diam":1,"diverg":0.7},
+  {"name":"OPSL 488 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":488,"power_W":3,"diam":1,"diverg":0.7},
+  {"name":"OPSL 514 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":514,"power_W":1,"diam":1,"diverg":0.7},
+  {"name":"OPSL 532 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":532,"power_W":5,"diam":1,"diverg":0.7},
+  {"name":"OPSL 561 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":561,"power_W":0.5,"diam":1,"diverg":0.7},
+  {"name":"OPSL 577 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":577,"power_W":3,"diam":1,"diverg":0.7},
+  {"name":"OPSL 590 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":590,"power_W":2,"diam":1,"diverg":0.7},
+  {"name":"OPSL 607 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":607,"power_W":0.5,"diam":1,"diverg":1.5},
+  {"name":"OPSL 639 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":639,"power_W":1,"diam":1,"diverg":1.5},
+  {"name":"OPSL 460 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":460,"power_W":2,"diam":1.5,"diverg":1.4},
+  {"name":"OPSL 480 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":480,"power_W":4,"diam":1.6,"diverg":1.5},
+  {"name":"OPSL 488 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":488,"power_W":5,"diam":1.6,"diverg":1.5},
+  {"name":"OPSL 514 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":514,"power_W":5,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 532 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":532,"power_W":8,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 561 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":561,"power_W":2,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 577 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":577,"power_W":5,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 590 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":590,"power_W":3,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 639 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":639,"power_W":5,"diam":1.5,"diverg":1.5},
   {"name":"Diode 405","brand":"Generic","type":"Diode","mode":"MTM","wl":405,"power_W":0.3,"diam":2,"diverg":1.2},
   {"name":"Diode 445","brand":"Generic","type":"Diode","mode":"MTM","wl":445,"power_W":1.6,"diam":3,"diverg":1.5},
   {"name":"Diode 460","brand":"Generic","type":"Diode","mode":"MTM","wl":460,"power_W":1,"diam":2.5,"diverg":1.5},
@@ -869,7 +914,9 @@ let lastSol = null, lastHull = [];   // cached for lightweight redraws (hover)
 /* ---------- canvas / rendering ---------- */
 const canvas = document.getElementById('cie');
 const ctx = canvas.getContext('2d');
-const X_MIN=0, X_MAX=0.75, Y_MIN=0, Y_MAX=0.85;
+// Slightly padded viewport so the outward wavelength labels around the locus don't clip
+// at the canvas edges (locus reaches ~0.734 x, ~0.834 y).
+const X_MIN=-0.04, X_MAX=0.78, Y_MIN=-0.04, Y_MAX=0.88;
 let W=720, H=760, DPR=1;
 let bgCache = null; // ImageData of colored locus
 
@@ -1001,6 +1048,7 @@ function draw(sol, hull){
 /* ---------- recompute + render everything ---------- */
 function recompute(){
   const active = activeLasers();
+  updateCombine();   // refresh combining plan + per-laser throughput before anything uses effPmax()
   const pts = active.map(l=>xyOfWavelength(l.wl));
   const hull = convexHull(pts);
   const sol = solveWhite(active);   // still needed by draw() for the mix point
@@ -1008,6 +1056,127 @@ function recompute(){
   draw(sol, hull);
   renderRail();
 }
+
+/* ---------- beam combining (cascade order + edge dichroics) ----------
+   Beams merge in a linear cascade: a base beam runs down the output axis and each
+   laser is added via a dichroic that reflects the new color and transmits everything
+   already on-axis. The last-added beam takes one reflection and no downstream
+   transmissions → least loss, so we combine the lowest-PB line last. Only edge
+   (long/short-pass) mirrors are used; a mid-band weak line can't take the final slot
+   without a notch/bandpass mirror, so it's placed as high as edge mirrors allow.
+   Efficiencies are estimates (editable) — a real dichroic catalog can replace them. */
+function pbOfLaser(l){   // perceived brightness of this laser at its rating, current viewing condition
+  return 100*Math.cbrt(Math.max(0, lumWeight(l.wl)*scatter(l.wl)*(l.pmax||0)));
+}
+function combineEff(){
+  const g=(id,d)=>Math.max(0.5, Math.min(1, (parseFloat((document.getElementById(id)||{}).value)||d)/100));
+  return { R:g('reflEff',95), T:g('transEff',91) };   // defaults = avg of researched dichroics (see dichroics.json)
+}
+function planCombine(active){
+  const rem = active.slice().sort((a,b)=>a.wl-b.wl);
+  const rev = [];   // rev[0] = last-added (least loss)
+  while(rem.length>1){
+    if(pbOfLaser(rem[0]) <= pbOfLaser(rem[rem.length-1])) rev.push(rem.shift());
+    else rev.push(rem.pop());
+  }
+  rev.push(rem[0]);
+  return rev.reverse();   // cascade: [0]=base ... [N-1]=last-added
+}
+// throughput at cascade position p (1..N): base transmits through all downstream; each
+// reflected beam takes 1 reflection + the downstream transmissions.
+function throughputAt(p, N, R, T){ return (p===1?1:R)*Math.pow(T, N-p); }
+// Delivered power model: raw pmax × combining throughput, applied everywhere when the toggle is on.
+let applyCombined = false;
+let combineThru = {};   // laser id → throughput (refreshed by updateCombine)
+function effPmax(l){ const base=l.pmax||0; return applyCombined ? base*(combineThru[l.id] ?? 1) : base; }
+const chromaOf = b => { const p=xyOfWavelength(b.wl); return chromaToCss(p[0],p[1]); };
+// Additive-mix CSS color of a set of beams, weighted by wOf(beam). Using the D65-balance
+// powers makes the fully-combined beam read as white.
+function mixCss(beams, wOf){
+  let X=0,Y=0,Z=0;
+  for(const b of beams){ const c=cmfAt(b.wl), p=Math.max(0, wOf(b)); X+=c[0]*p; Y+=c[1]*p; Z+=c[2]*p; }
+  const s=X+Y+Z;
+  return s>0 ? chromaToCss(X/s, Y/s) : 'var(--faint)';
+}
+function combineSVG(cascade, d65p){
+  const N=cascade.length, dx=58, x0=54, axisY=32, srcY=86, bw=30, bh=17;
+  const cx=i=>x0+(i-1)*dx, outX=(N>=2?cx(N-1):x0)+40, VBW=outX+14, VBH=112;
+  // weight the beam mix by D65-balance power (final beam = white); fall back to rated power
+  // if this set can't reach white.
+  const totD65 = Object.values(d65p||{}).reduce((a,v)=>a+v,0);
+  const wOf = totD65>1e-6 ? (b=>d65p[b.id]||0) : (b=>b.pmax||1);
+  let s=`<svg viewBox="0 0 ${VBW} ${VBH}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="beam combining chain">`;
+  // grey backdrop for the whole diagram (so colored + near-white beams read on any theme)
+  s+=`<rect x="0" y="0" width="${VBW}" height="${VBH}" rx="9" fill="#464d5a"/>`;
+  // combined-beam axis, each segment colored by the accumulated D65-balanced mix at that stage
+  const bx=[28]; for(let i=1;i<=N-1;i++) bx.push(cx(i)); bx.push(outX);
+  for(let k=0;k<N;k++) s+=`<line x1="${bx[k]}" y1="${axisY}" x2="${bx[k+1]}" y2="${axisY}" stroke="${mixCss(cascade.slice(0,k+1), wOf)}" stroke-width="3"/>`;
+  s+=`<path d="M${outX-8},${axisY-4} L${outX},${axisY} L${outX-8},${axisY+4}" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`;
+  const base=cascade[0];
+  s+=`<rect x="6" y="${axisY-bh/2}" width="${bw}" height="${bh}" rx="3" fill="${chromaOf(base)}"/>`;
+  s+=`<text x="21" y="${axisY-bh/2-4}" class="csvg-wl" text-anchor="middle">${base.wl}</text>`;
+  for(let i=1;i<=N-1;i++){
+    const add=cascade[i], x=cx(i);
+    s+=`<line x1="${x}" y1="${srcY-bh/2}" x2="${x}" y2="${axisY}" stroke="${chromaOf(add)}" stroke-width="2"/>`;
+    s+=`<line x1="${x-8}" y1="${axisY+8}" x2="${x+8}" y2="${axisY-8}" stroke="var(--accent)" stroke-width="2.5"/>`;
+    s+=`<rect x="${x-bw/2}" y="${srcY-bh/2}" width="${bw}" height="${bh}" rx="3" fill="${chromaOf(add)}"/>`;
+    s+=`<text x="${x}" y="${srcY+bh/2+10}" class="csvg-wl" text-anchor="middle">${add.wl}</text>`;
+  }
+  return s+`</svg>`;
+}
+function updateCombine(){
+  const stepsEl=document.getElementById('combineSteps'); if(!stepsEl) return;
+  const thruEl=document.getElementById('combineThru'), noteEl=document.getElementById('combineNote');
+  const pill=document.getElementById('combinePill'), head=document.getElementById('combineThruHead');
+  const diag=document.getElementById('combineDiagram');
+  const active=activeLasers();
+  combineThru = {};
+  if(active.length<2){
+    pill.textContent = active.length+' beam'+(active.length===1?'':'s');
+    stepsEl.innerHTML='<p class="combine-empty">Select at least two lasers to plan a combiner.</p>';
+    thruEl.innerHTML=''; noteEl.innerHTML=''; head.textContent=''; diag.innerHTML='';
+    return;
+  }
+  const cascade=planCombine(active), N=cascade.length, {R,T}=combineEff();
+  cascade.forEach((b,i)=>{ combineThru[b.id]=throughputAt(i+1,N,R,T); });
+  pill.textContent = N+' beams · '+(N-1)+' mirror'+((N-1)===1?'':'s');
+  // per-laser D65-balance powers (the mix that outputs white) → colors the beam axis
+  const sol=solveWhite(active), d65p={};
+  active.forEach((l,i)=> d65p[l.id]=Math.max(0,(sol.powers&&sol.powers[i])||0));
+  diag.innerHTML = combineSVG(cascade, d65p);
+  let steps=`<div class="cstep"><span class="cnum">Base</span><span class="cwl" style="color:${chromaOf(cascade[0])}">${cascade[0].wl} nm</span><span class="cdesc">on-axis · ${escAttr(cascade[0].name)}</span></div>`;
+  for(let p=2;p<=N;p++){
+    const add=cascade[p-1], onax=cascade.slice(0,p-1);
+    const minOn=Math.min(...onax.map(b=>b.wl)), maxOn=Math.max(...onax.map(b=>b.wl));
+    const short = add.wl < minOn, type = short?'longpass':'shortpass';   // longpass transmits long (on-axis), reflects short (new)
+    const edge = Math.round((add.wl + (short?minOn:maxOn))/2);
+    steps += `<div class="cstep"><span class="cnum">${p-1}</span><span class="cwl" style="color:${chromaOf(add)}">+ ${add.wl} nm</span>`
+      + `<span class="cdesc">${type} @ ~${edge} nm${p===N?' · last, lowest loss':''}</span></div>`;
+  }
+  stepsEl.innerHTML=steps;
+  const pbs=cascade.map(pbOfLaser), weakIdx=pbs.indexOf(Math.min(...pbs));
+  head.textContent = applyCombined ? 'Delivered power (applied to mix)' : 'Delivered power (estimated)';
+  let thru='';
+  cascade.forEach((b,i)=>{
+    const eff=throughputAt(i+1,N,R,T);
+    thru += `<div class="pm-row${i===weakIdx?' cweak':''}"><span class="pm-wl">${b.wl}</span>`
+      + `<span class="pm-bar"><span class="pm-fill" style="width:${(eff*100).toFixed(1)}%;background:${chromaOf(b)}"></span></span>`
+      + `<span class="pm-val">${(eff*100).toFixed(1)}%</span></div>`;
+  });
+  thruEl.innerHTML=thru;
+  const wPos=weakIdx+1, wEff=(throughputAt(wPos,N,R,T)*100).toFixed(1);
+  let note=`Weakest line (lowest PB): <b>${cascade[weakIdx].wl} nm</b> → ~${wEff}% delivered`;
+  note += (wPos===N)
+    ? ' — combined last (one reflection), the best an edge-mirror chain can do.'
+    : `. It's a mid-band line, so an edge-only chain can't give it the final slot without a notch/bandpass mirror; it's placed as high as edge mirrors allow.`;
+  note += applyCombined
+    ? ' <b>Applied</b> — chips, totals, brightness and the Power map now use these post-combining watts.'
+    : ' Tick “Apply to mix” to use these post-combining watts everywhere.';
+  noteEl.innerHTML=note;
+}
+document.getElementById('reflEff').addEventListener('input', recompute);
+document.getElementById('transEff').addEventListener('input', recompute);
+document.getElementById('applyCombined').addEventListener('change', e=>{ applyCombined=e.target.checked; recompute(); });
 
 /* ---------- UI: rail ---------- */
 const laserList = document.getElementById('laserList');
@@ -1073,7 +1242,7 @@ function renderProbe(){
   // so a full bar = running at max, an empty bar = unused for this color.
   active.forEach((l,i)=>{
     const aw=Math.max(0,(powers?powers[i]:0)*P.geom[i]); totalW+=aw;
-    const cap=Math.max(1e-6, l.pmax||0); installedW+=cap;
+    const cap=Math.max(1e-6, effPmax(l)); installedW+=cap;
     const frac=Math.max(0,Math.min(1, aw/cap))*100;
     const p=xyOfWavelength(l.wl), col=chromaToCss(p[0],p[1]);
     parts.push(`<div class="pm-row" title="${aw.toFixed(2)} W of ${cap.toFixed(2)} W max">`
@@ -1111,7 +1280,7 @@ function buildP(active){
   const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
             AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
   active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
-    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
+    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,effPmax(l))); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
   return P;
 }
 // TRUE max-brightness at chromaticity C: an LP — maximise apparent brightness Σ wᵢ·Wᵢ
@@ -1240,7 +1409,7 @@ function renderRail(){
     const p = xyOfWavelength(l.wl);
     // Per-chip power = the laser's static rating (max power); the Color Probe shows
     // how much of it a given color actually uses.
-    const powHtml = l.on ? `<span class="chip-pow" title="laser rating (max power)">${(l.pmax||0).toFixed(2)} W</span>` : '';
+    const powHtml = l.on ? `<span class="chip-pow" title="${applyCombined?'delivered power after combining':'laser rating (max power)'}">${effPmax(l).toFixed(2)} W</span>` : '';
     const chip=document.createElement('div');
     chip.className = `chip ${l.type} ${l.on?'on':'off'}`;
     chip.dataset.on = l.id;
@@ -1275,12 +1444,12 @@ function renderRail(){
     }
   });
 
-  // Static total = installed power: sum of every selected laser's max power.
+  // Static total: sum of every selected laser's power (delivered, after combining, when applied).
   const onLasers = lasers.filter(l=>l.on);
-  const installedW = onLasers.reduce((a,l)=>a+(l.pmax||0),0);
+  const installedW = onLasers.reduce((a,l)=>a+effPmax(l),0);
   const lt=document.getElementById('laserTotal');
   if(lt) lt.innerHTML = onLasers.length
-    ? `<span>Total power · ${onLasers.length} laser${onLasers.length===1?'':'s'} selected</span><b>${installedW.toFixed(2)} W</b>`
+    ? `<span>${applyCombined?'Delivered power':'Total power'} · ${onLasers.length} laser${onLasers.length===1?'':'s'} selected</span><b>${installedW.toFixed(2)} W</b>`
     : '';
 
   renderProbe();
