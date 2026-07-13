@@ -276,11 +276,6 @@
   }
   .add-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  .readout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-  .ro { display: flex; flex-direction: column; }
-  .ro .k { font-size: 11px; color: var(--faint); letter-spacing: 0.02em; }
-  .ro .v { font-size: 14.5px; }
-
   .foot { margin-top: 22px; font-size: 12px; color: var(--faint); max-width: 70ch; }
   a.link { color: var(--accent); text-decoration: none; }
 
@@ -601,7 +596,6 @@ function convexHull(pts) {
   lo.pop(); up.pop();
   return lo.concat(up); // CCW
 }
-function polyArea(poly){ let a=0; for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length]; a+=p[0]*q[1]-q[0]*p[1];} return Math.abs(a)/2; }
 function pointInPoly(pt, poly){
   let inside=false;
   for(let i=0,j=poly.length-1;i<poly.length;j=i++){
@@ -610,38 +604,11 @@ function pointInPoly(pt, poly){
   }
   return inside;
 }
-// Clip subject polygon by convex clip polygon (Sutherland–Hodgman)
-function clipPoly(subject, clip){
-  if(clip.length<3) return [];
-  let out=subject.slice();
-  const inside=(p,a,b)=>((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]))>=0;
-  const inter=(a,b,c,d)=>{const A=[b[0]-a[0],b[1]-a[1]],B=[d[0]-c[0],d[1]-c[1]];
-    const den=A[0]*B[1]-A[1]*B[0]; if(Math.abs(den)<1e-12) return b;
-    const t=((c[0]-a[0])*B[1]-(c[1]-a[1])*B[0])/den; return [a[0]+t*A[0],a[1]+t*A[1]];};
-  for(let i=0;i<clip.length;i++){
-    const a=clip[i], b=clip[(i+1)%clip.length]; const input=out; out=[];
-    for(let j=0;j<input.length;j++){
-      const cur=input[j], prev=input[(j+input.length-1)%input.length];
-      const curIn=inside(cur,a,b), prevIn=inside(prev,a,b);
-      if(curIn){ if(!prevIn) out.push(inter(prev,cur,a,b)); out.push(cur); }
-      else if(prevIn){ out.push(inter(prev,cur,a,b)); }
-    }
-    if(out.length===0) return [];
-  }
-  return out;
-}
 function distToSeg(p,a,b){
   const dx=b[0]-a[0],dy=b[1]-a[1], l2=dx*dx+dy*dy;
   let t = l2>0 ? ((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l2 : 0; t=Math.max(0,Math.min(1,t));
   const cx=a[0]+t*dx, cy=a[1]+t*dy; return Math.hypot(p[0]-cx,p[1]-cy);
 }
-
-/* Standard gamuts (xy primaries) */
-const STD = {
-  "Rec.709": { sub:"sRGB", tri:[[0.64,0.33],[0.30,0.60],[0.15,0.06]], color:"#4a90d9" },
-  "DCI-P3":  { sub:"cinema", tri:[[0.68,0.32],[0.265,0.690],[0.150,0.060]], color:"#9b59b6" },
-  "Rec.2020":{ sub:"UHD", tri:[[0.708,0.292],[0.170,0.797],[0.131,0.046]], color:"#e0a020" },
-};
 
 /* ---------- mix solver: non-negative optical powers → a target chromaticity ---------- */
 // Two lasers: the achievable chromaticities are exactly the segment between the
@@ -815,7 +782,11 @@ function presetNames(key){
   return PRESETS[key]||[];
 }
 function presetLasers(key){
-  return presetNames(key).map(nm => CATALOG.find(c=>c.name===nm)).filter(Boolean).map(c=>instFromCatalog(c,true));
+  // The rgb* presets name specific catalog entries; if the active database doesn't
+  // have them, fall back to the built-in default so the built-in presets always load.
+  return presetNames(key)
+    .map(nm => CATALOG.find(c=>c.name===nm) || BUILTIN_CATALOG.find(c=>c.name===nm))
+    .filter(Boolean).map(c=>instFromCatalog(c,true));
 }
 let lasers = presetLasers('rgbDiode');   // default preset
 const activeLasers = () => lasers.filter(l => l.on);
@@ -863,23 +834,16 @@ function scatter(wl){
 }
 
 /* ---------- perceived brightness (mesopic + compression) ---------- */
-let perceived = true;    // the tool's only brightness metric: perceived (mesopic + compressed)
 function darkAdapt(){ return Math.max(0, Math.min(1, (parseFloat((document.getElementById('darkAdapt')||{}).value)||0)/100)); }
-// Luminous-efficiency weight: photopic V(λ), or a mesopic blend toward scotopic V'(λ)
+// Luminous-efficiency weight: a mesopic blend from photopic V(λ) toward scotopic V'(λ)
 // as dark adaptation rises (the Purkinje shift toward ~507 nm).
 function lumWeight(wl){
-  const V = cmfAt(wl)[1];
-  if(!perceived) return V;
-  const a = darkAdapt();
+  const V = cmfAt(wl)[1], a = darkAdapt();
   return (1-a)*V + a*vprime(wl);
 }
-// Linear "brightness flux" of `watts` radiant at wl (mesopic + medium weighted).
-function apparentLm(wl, watts){ return 683 * lumWeight(wl) * scatter(wl) * watts; }
-const fmtLm = lm => lm>=1000 ? (lm/1000).toFixed(1)+'k lm' : Math.round(lm)+' lm';
-// Headline brightness: photometric lumens, or a compressed perceptual index (PB),
-// anchored so 1 W of 555 nm at full daylight adaptation reads 100 PB (Stevens ~cube-root).
+// Headline brightness: a compressed perceptual index (PB), anchored so 1 W of 555 nm
+// at full daylight adaptation reads 100 PB (Stevens ~cube-root).
 function fmtBright(flux){
-  if(!perceived) return fmtLm(flux);
   return Math.round(100*Math.cbrt(Math.max(0,flux)/683)) + ' PB';
 }
 
@@ -950,10 +914,10 @@ function draw(sol, hull){
 
   // gamut fill: hue background, brightness heatmap, or total-power heatmap
   if(viewMode==='bright'){
-    if(brightDirty && dragId==null){ computeBrightField(); brightDirty=false; }
+    if(brightDirty){ computeBrightField(); brightDirty=false; }
     if(brightCanvas){ ctx.imageSmoothingEnabled=true; ctx.drawImage(brightCanvas, 0, 0, W, H); }
   } else if(viewMode==='power'){
-    if(brightDirty && dragId==null){ computePowerField(); brightDirty=false; }
+    if(brightDirty){ computePowerField(); brightDirty=false; }
     if(powerCanvas){ ctx.imageSmoothingEnabled=true; ctx.drawImage(powerCanvas, 0, 0, W, H); }
   } else if(bgCache){ ctx.putImageData(bgCache, 0, 0); }
 
@@ -1009,7 +973,7 @@ function draw(sol, hull){
     const p=xyOfWavelength(l.wl); const cx=sx(p[0]),cy=sy(p[1]); const s=6.5*DPR;
     ctx.beginPath(); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath();
     ctx.fillStyle=chromaToCss(p[0],p[1]); ctx.fill();
-    ctx.strokeStyle= l.id===dragId ? cssVar('--accent') : '#000'; ctx.lineWidth=(l.id===dragId?2.5:1.5)*DPR; ctx.stroke();
+    ctx.strokeStyle='#000'; ctx.lineWidth=1.5*DPR; ctx.stroke();
   });
 
   // probe marker (color under cursor)
@@ -1025,14 +989,10 @@ function recompute(){
   const active = activeLasers();
   const pts = active.map(l=>xyOfWavelength(l.wl));
   const hull = convexHull(pts);
-  const sol = solveWhite(active);
-  // map solved powers back to laser id
-  const powerById = {};
-  const totalP = sol.powers.reduce((a,b)=>a+b,0) || 1;
-  active.forEach((l,i)=> powerById[l.id] = sol.powers[i] || 0);
+  const sol = solveWhite(active);   // still needed by draw() for the mix point
   lastSol = sol; lastHull = hull; brightDirty = true;
   draw(sol, hull);
-  renderRail(sol, hull, powerById, totalP);
+  renderRail();
 }
 
 /* ---------- UI: rail ---------- */
@@ -1045,7 +1005,7 @@ function updateModeNote(){
   let s = mixMode==='beam'
     ? 'Beam-corrected: required watts scale with spot area (Ø at distance)² — a fatter or faster-diverging line needs more power for the same apparent brightness.'
     : 'Raw power: assumes identical beams. Switch to Beam-corrected to weight required watts by each laser’s diameter &amp; divergence.';
-  if(perceived) s += ' <b>Perceived</b>: brightness uses a mesopic (dark-adapted) curve plus cube-root compression — an approximation shown as a relative index (PB), not lumens.';
+  s += ' <b>Perceived</b>: brightness uses a mesopic (dark-adapted) curve plus cube-root compression — an approximation shown as a relative index (PB), not lumens.';
   el.innerHTML = s;
 }
 function updateHalo(){
@@ -1090,8 +1050,10 @@ function renderProbe(){
     detail.textContent='These primaries cannot reproduce this color.';
     mixEl.innerHTML=''; resetBright(); return;
   }
-  const P=prepActive(active);
-  const {bright, powers}=maxBright(C, P, true);   // exact max-brightness LP
+  const P=buildP(active);
+  // Exact vertex-enumeration LP for small sets; projected-gradient approximation for
+  // large ones (the exact path is exponential in primary count — matches the heatmaps).
+  const {bright, powers} = active.length<=6 ? maxBright(C, P, true) : maxBrightAt(C, P, true);
   const parts=[]; let totalW=0, installedW=0;
   // One horizontal bar per active laser: fill = emitted watts ÷ that laser's rating,
   // so a full bar = running at max, an empty bar = unused for this color.
@@ -1115,7 +1077,7 @@ function renderProbe(){
   lmEl.textContent = fmtBright(bright);
   // Bar is relative to the brightest color the set can make (all lasers at max = Σ wᵢ·capᵢ).
   const maxFlux = P.w.reduce((a,w,i)=>a + w*P.cap[i], 0);
-  const bfrac = maxFlux>0 ? (perceived ? Math.cbrt(bright/maxFlux) : bright/maxFlux) : 0;
+  const bfrac = maxFlux>0 ? Math.cbrt(bright/maxFlux) : 0;
   if(brightEl) brightEl.style.width = (Math.max(0,Math.min(1,bfrac))*100).toFixed(1)+'%';
   mixEl.innerHTML = parts.join('');
 }
@@ -1128,9 +1090,12 @@ function brightRamp(t){ // 0..1 → dark → teal → warm-white
   const a=stops[i], b=stops[i+1];
   return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
 }
-// Prepared per-laser arrays for the brightness solves.
-function prepActive(active){
-  const n=active.length, P={n,X:[],Y:[],S:[],geom:[],cap:[],w:[]};
+// Prepared per-laser arrays for the brightness solves (shared by the probe LP and the
+// heatmap field scans). Includes the scratch arrays maxBrightAt's projected-gradient uses.
+function buildP(active){
+  const n=active.length;
+  const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
+            AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
   active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
     P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
   return P;
@@ -1167,7 +1132,7 @@ function maxBright(C, P, wantPowers){
   }
   return { bright: best, powers };
 }
-function maxBrightAt(C, P){ // fast approximation for large primary counts; apparent brightness only
+function maxBrightAt(C, P, wantPowers){ // fast approximation for large primary counts
   const n=P.n, Wc=60, A0=P.A0, A1=P.A1, A2=P.A2;
   for(let i=0;i<n;i++){ const S=P.S[i]; A0[i]=Wc*(P.X[i]-C[0]*S); A1[i]=Wc*(P.Y[i]-C[1]*S); A2[i]=P.Y[i]; }
   const AtA=P.AtA, Atb=P.Atb;
@@ -1176,9 +1141,10 @@ function maxBrightAt(C, P){ // fast approximation for large primary counts; appa
   const Pw=P.Pw; for(let i=0;i<n;i++) Pw[i]=1/n;
   for(let it=0; it<110; it++){ for(let i=0;i<n;i++){ let s=-Atb[i]; for(let j=0;j<n;j++) s+=AtA[i][j]*Pw[j]; Pw[i]=Math.max(0,Pw[i]-step*s); } }
   let k=Infinity; for(let i=0;i<n;i++){ const need=Pw[i]*P.geom[i]; if(need>1e-9){ const kk=P.cap[i]/need; if(kk<k)k=kk; } }
-  if(!isFinite(k)) return {bright:0, power:0};
-  let b=0, pw=0; for(let i=0;i<n;i++){ const emit=k*Pw[i]*P.geom[i]; b+=P.w[i]*emit; pw+=emit; }
-  return {bright:b, power:pw};
+  if(!isFinite(k)) return {bright:0, power:0, powers: wantPowers ? new Array(n).fill(0) : null};
+  let b=0, pw=0; const powers = wantPowers ? new Array(n) : null;
+  for(let i=0;i<n;i++){ const emit=k*Pw[i]*P.geom[i]; b+=P.w[i]*emit; pw+=emit; if(powers) powers[i]=k*Pw[i]; }
+  return {bright:b, power:pw, powers};
 }
 function computeBrightField(){
   const active=activeLasers();
@@ -1187,10 +1153,7 @@ function computeBrightField(){
   if(hull.length<3){ brightCanvas=null; return; }
   const GW=120, GH=Math.round(GW*(Y_MAX-Y_MIN)/(X_MAX-X_MIN));
   const n=active.length;
-  const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
-            AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
-  active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
-    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
+  const P=buildP(active);
   const exact = n<=6;   // exact vertex-enumeration LP for typical designs; PG approximation for large sets
   const field=new Float64Array(GW*GH); let fmax=1e-9;
   for(let gy=0; gy<GH; gy++){
@@ -1204,9 +1167,9 @@ function computeBrightField(){
   }
   const off=document.createElement('canvas'); off.width=GW; off.height=GH;
   const octx=off.getContext('2d'); const img=octx.createImageData(GW,GH); const d=img.data;
-  const fnorm = perceived ? Math.cbrt(fmax) : fmax;   // compress the ramp in perceived mode
+  const fnorm = Math.cbrt(fmax);   // compress the ramp (cube-root, matching PB)
   for(let i=0;i<GW*GH;i++){ const b=field[i]; if(b<=0){ d[i*4+3]=0; continue; }
-    const t = (perceived ? Math.cbrt(b) : b)/fnorm;
+    const t = Math.cbrt(b)/fnorm;
     const rgb=brightRamp(t); d[i*4]=rgb[0]; d[i*4+1]=rgb[1]; d[i*4+2]=rgb[2]; d[i*4+3]=245; }
   octx.putImageData(img,0,0); brightCanvas=off;
 }
@@ -1227,10 +1190,7 @@ function computePowerField(){
   if(hull.length<3){ powerCanvas=null; if(viewMode==='power'&&note) note.textContent='add ≥3 primaries'; return; }
   const GW=120, GH=Math.round(GW*(Y_MAX-Y_MIN)/(X_MAX-X_MIN));
   const n=active.length;
-  const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
-            AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
-  active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
-    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
+  const P=buildP(active);
   const exact = n<=6;
   const installed = P.cap.reduce((a,b)=>a+b,0);   // Σ max power = full installed watts (emitted ≤ this everywhere)
   const field=new Float64Array(GW*GH); let pmaxW=0;
@@ -1255,7 +1215,7 @@ function computePowerField(){
     note.textContent = `optical watts at max brightness · peak ${pmaxW.toFixed(1)} W of ${installed.toFixed(1)} W installed`;
 }
 
-function renderRail(sol, hull, powerById, totalP){
+function renderRail(){
   const nActive = activeLasers().length;
   document.getElementById('countPill').textContent = `${nActive} on · ${lasers.length}`;
 
@@ -1632,80 +1592,7 @@ document.getElementById('dbClose').addEventListener('click', closeDbModal);
 document.getElementById('dbModal').addEventListener('click', e=>{ if(e.target.id==='dbModal') closeDbModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && document.getElementById('dbModal').classList.contains('open')) closeDbModal(); });
 
-/* ========================================================================
-   DEAD CODE — Best Subset Finder. NO LONGER USED; marked for removal.
-   The finder tile/UI was removed 2026-07-13, and the earlier plan to keep this
-   for a low/zero-CRI "best pair" experiment has been dropped (user decision,
-   2026-07-13). Delete this entire block in a future code review / refactor,
-   plus anything it leaves orphaned: WHITE_TOL, rec2020Cov, combinations,
-   findBestSubset, isBetter, findBestPair, applySubset. Also check STD and
-   clipPoly — after this block they are unused and can go too. KEEP solvePair,
-   solveWhite, convexHull, polyArea (used elsewhere in the app).
-   ======================================================================== */
-const WHITE_TOL = 0.003;      // xy distance considered "white"
-function rec2020Cov(hull){
-  if(hull.length<3) return 0;
-  const t=STD['Rec.2020'].tri;
-  return polyArea(clipPoly(t, hull))/polyArea(t)*100;
-}
-function* combinations(arr, k, start=0, cur=[]){
-  if(cur.length===k){ yield cur.slice(); return; }
-  for(let i=start;i<=arr.length-(k-cur.length);i++){ cur.push(arr[i]); yield* combinations(arr,k,i+1,cur); cur.pop(); }
-}
-function findBestSubset(mode){
-  const all = lasers.slice();
-  const n = all.length;
-  if(n < 2) return null;
-  const maxK = Math.min(n > 14 ? 5 : 6, n);
-  let best = null;
-  const idxs = all.map((_,i)=>i);
-  for(let k=2; k<=maxK; k++){
-    for(const c of combinations(idxs, k)){
-      const subset = c.map(i=>all[i]);
-      const sol = solveWhite(subset);
-      if(sol.dist < WHITE_TOL){
-        const hull = convexHull(subset.map(l=>xyOfWavelength(l.wl)));
-        const cand = {
-          ids: subset.map(l=>l.id), wls: subset.map(l=>l.wl).sort((a,b)=>a-b),
-          k, dist: sol.dist,
-          area: hull.length>=3 ? polyArea(hull) : 0,
-          rec2020: rec2020Cov(hull),
-        };
-        if(!best || isBetter(cand, best, mode)) best = cand;
-      }
-    }
-    if(mode==='fewest' && best) break; // smallest k that works wins
-  }
-  return best;
-}
-function isBetter(a, b, mode){
-  if(mode==='fewest'){ if(a.k!==b.k) return a.k<b.k; if(Math.abs(a.rec2020-b.rec2020)>0.01) return a.rec2020>b.rec2020; return a.dist<b.dist; }
-  if(Math.abs(a.rec2020-b.rec2020)>0.01) return a.rec2020>b.rec2020; // widest
-  if(Math.abs(a.area-b.area)>1e-6) return a.area>b.area;
-  return a.dist<b.dist;
-}
-// Best 2-laser approximation: the pair whose segment passes closest to D65.
-function findBestPair(){
-  const all = lasers.slice();
-  if(all.length < 2) return null;
-  let best = null;
-  for(let i=0;i<all.length;i++) for(let j=i+1;j<all.length;j++){
-    const sol = solveWhite([all[i], all[j]]);
-    if(!best || sol.dist < best.dist){
-      best = { ids:[all[i].id, all[j].id], wls:[all[i].wl, all[j].wl].sort((a,b)=>a-b), dist:sol.dist };
-    }
-  }
-  return best;
-}
-function applySubset(ids){
-  const set = new Set(ids);
-  lasers.forEach(l=> l.on = set.has(l.id));
-  recompute();
-}
-/* ===================== end DEAD CODE (Best Subset Finder) ===================== */
-
 /* color probe on hover (lasers aren't tunable, so points aren't draggable) */
-const dragId = null;   // kept for draw()/heatmap guards; nothing is ever dragged
 function eventXY(e){
   const r=canvas.getBoundingClientRect();
   const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
