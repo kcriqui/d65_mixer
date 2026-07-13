@@ -92,6 +92,7 @@
   .diagram-hint { margin-top: 8px; font-size: 12px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
 
   .rail { display: flex; flex-direction: column; gap: 16px; }
+  .leftcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
   .section { padding: 16px 16px 17px; }
   .section h2 {
@@ -117,22 +118,13 @@
     border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted);
   }
 
-  /* Laser list */
-  .laser-row {
-    display: flex; flex-direction: column; gap: 7px;
-    padding: 11px 0; border-top: 1px solid var(--line);
-  }
-  .laser-row:first-of-type { border-top: none; }
-  .laser-row.off { opacity: 0.5; }
-  .on-box { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; flex: none; }
-  .laser-swatch { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--swatch-ring); flex: none; }
-  .lr-head { display: flex; align-items: center; gap: 8px; }
+  /* Laser spec editor (reused by the expandable chip editor) */
   .name-input {
-    flex: 1; min-width: 0; background: transparent; border: 1px solid transparent;
-    color: var(--text); border-radius: 6px; padding: 3px 5px; font-size: 13.5px; font-weight: 550;
+    flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line-strong);
+    color: var(--text); border-radius: 6px; padding: 4px 7px; font-size: 13.5px; font-weight: 550;
   }
   .name-input:hover { border-color: var(--line); }
-  .name-input:focus { outline: none; border-color: var(--accent); background: var(--panel-2); }
+  .name-input:focus { outline: none; border-color: var(--accent); }
   .type-badge {
     font-size: 10px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 5px;
     border: 1px solid var(--line-strong); color: var(--muted); flex: none;
@@ -141,11 +133,9 @@
   .type-badge.Diode { color: #ff9d6e; border-color: #7f4a35; }
   .type-badge.DPSS { color: #7fe0a0; border-color: #35704a; }
   .mode-tag { font-size: 10px; letter-spacing: 0.03em; color: var(--faint); flex: none; }
-  .spec.est { color: var(--warn); opacity: 0.85; cursor: help; }
-  .lr-specs { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 26px; }
   .spec { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--faint); }
   .spec-input {
-    width: 50px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    width: 50px; background: var(--panel); border: 1px solid var(--line-strong); color: var(--text);
     border-radius: 6px; padding: 3px 5px; font-size: 12px;
     font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
   }
@@ -153,28 +143,45 @@
   .spec-input:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
   .spot-tag { font-size: 11px; color: var(--accent); margin-left: auto; white-space: nowrap; }
   .spot-tag.muted { color: var(--faint); }
-  .laser-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .laser-top { display: flex; align-items: center; gap: 8px; }
-  .wl-input {
-    width: 74px; background: var(--panel-2); border: 1px solid var(--line-strong);
-    color: var(--text); border-radius: 7px; padding: 5px 7px; font-size: 14px;
-    font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums;
-  }
-  .wl-input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
-  .wl-unit { font-size: 12px; color: var(--faint); }
-  .power-line { display: flex; align-items: center; gap: 8px; padding-left: 26px; }
-  .power-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
-  .power-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.12s ease; }
-  .power-val { font-size: 12px; color: var(--muted); min-width: 46px; text-align: right; }
   .del-btn {
     background: none; border: 1px solid var(--line); color: var(--faint); cursor: pointer;
     width: 26px; height: 26px; border-radius: 7px; font-size: 15px; line-height: 1;
-    display: grid; place-items: center;
+    display: grid; place-items: center; flex: none;
   }
   .del-btn:hover { color: var(--bad); border-color: var(--bad); }
 
-  .power-val .w { color: var(--faint); }
-  .laser-row .power-val.limit { color: var(--accent); font-weight: 600; }
+  /* Laser chips (compact bank under the chart) */
+  .bank-hint { font-size: 11.5px; color: var(--faint); margin: 2px 0 10px; }
+  #laserList { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px; }
+  .chip {
+    display: flex; align-items: center; gap: 8px; min-width: 0;
+    padding: 8px 9px; border-radius: 9px; cursor: pointer;
+    background: var(--panel-2); border: 1px solid var(--line-strong); border-left-width: 3px;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.off { opacity: 0.5; }
+  .chip.on { background: color-mix(in srgb, var(--accent) 8%, var(--panel-2)); }
+  .chip.OPSL { border-left-color: #3a557f; }
+  .chip.Diode { border-left-color: #7f4a35; }
+  .chip.DPSS { border-left-color: #35704a; }
+  .chip-sw { width: 15px; height: 15px; border-radius: 4px; flex: none; box-shadow: inset 0 0 0 1px var(--swatch-ring); }
+  .chip-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 550; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-pow { flex: none; font-size: 11px; color: var(--muted); font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .chip-pow.limit { color: var(--accent); font-weight: 600; }
+  .chip-edit {
+    flex: none; background: none; border: 1px solid transparent; color: var(--faint); cursor: pointer;
+    width: 22px; height: 22px; border-radius: 6px; font-size: 12px; line-height: 1; display: grid; place-items: center;
+  }
+  .chip-edit:hover { color: var(--accent); border-color: var(--line); }
+  .chip-edit.active { color: var(--accent); border-color: var(--accent); }
+  .chip-editor {
+    grid-column: 1 / -1; display: flex; flex-direction: column; gap: 9px;
+    padding: 11px 12px; border-radius: 9px;
+    background: var(--panel-2); border: 1px solid var(--accent);
+  }
+  .chip-editor .ce-head { display: flex; align-items: center; gap: 8px; }
+  .chip-editor .ce-specs { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
 
   /* Presets */
   .preset-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -221,15 +228,10 @@
   .halo-note b { color: var(--warn); }
   .halo-note.hidden { display: none; }
 
-  /* Probe mix + hardware map */
+  /* Probe mix */
   .probe-mix { margin-top: 12px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 12px; }
   .probe-mix .pm { white-space: nowrap; }
   .probe-mix .pm b { color: var(--text); font-weight: 600; }
-  .hw-map { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-  .hw-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--muted); }
-  .hw-chip b { color: var(--text); font-weight: 600; }
-  #hwPill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
-  #hwPill.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
 
   /* Diagram view toggle */
   .view-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
@@ -239,23 +241,6 @@
   }
   .view-toggle button.active { background: var(--accent); color: #05201d; border-color: var(--accent); }
   .view-note { font-size: 11.5px; color: var(--faint); margin-left: auto; text-align: right; }
-
-  /* Best subset finder */
-  .finder-desc { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
-  .finder-btns { display: flex; gap: 8px; }
-  .find-btn {
-    flex: 1; padding: 9px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 550;
-    background: var(--panel-2); color: var(--text); border: 1px solid var(--line-strong);
-  }
-  .find-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .find-btn:active { transform: translateY(1px); }
-  .finder-result {
-    margin-top: 12px; font-size: 12.5px; color: var(--muted); line-height: 1.5;
-    padding: 10px 12px; background: var(--panel-2); border-radius: 8px; border: 1px solid var(--line);
-  }
-  .finder-result .win { color: var(--text); font-weight: 600; }
-  .finder-result .win.none { color: var(--warn); }
-  .finder-result .metrics { color: var(--faint); }
 
   .add-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
   .catalog-select {
@@ -270,14 +255,6 @@
   }
   .add-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Coverage */
-  .cov-row { display: grid; grid-template-columns: 92px 1fr 50px; align-items: center; gap: 10px; padding: 7px 0; }
-  .cov-name { font-size: 12.5px; color: var(--text); }
-  .cov-name small { color: var(--faint); font-size: 11px; }
-  .cov-bar { height: 7px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
-  .cov-fill { height: 100%; border-radius: 4px; }
-  .cov-val { font-size: 12.5px; text-align: right; color: var(--muted); }
-
   .readout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
   .ro { display: flex; flex-direction: column; }
   .ro .k { font-size: 11px; color: var(--faint); letter-spacing: 0.02em; }
@@ -285,6 +262,87 @@
 
   .foot { margin-top: 22px; font-size: 12px; color: var(--faint); max-width: 70ch; }
   a.link { color: var(--accent); text-decoration: none; }
+
+  /* Small buttons (header actions, modal, save) */
+  .h2-actions { display: flex; align-items: center; gap: 8px; }
+  .mini-btn {
+    padding: 5px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 550;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--line-strong); white-space: nowrap;
+  }
+  .mini-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mini-btn.accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
+  .mini-btn.accent:hover { background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
+  .mini-btn.warn:hover { border-color: var(--warn); color: var(--warn); }
+
+  /* Saved-setup chips */
+  .saved-row { margin-top: -4px; }
+  .profile-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+  .profile-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    font-size: 12px; font-weight: 550; cursor: pointer; max-width: 100%;
+  }
+  .profile-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .profile-chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-chip .x { color: var(--faint); font-size: 13px; line-height: 1; padding: 0 1px; }
+  .profile-chip .x:hover { color: var(--bad); }
+  .profile-empty { font-size: 11.5px; color: var(--faint); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 60; display: none;
+    align-items: flex-start; justify-content: center; padding: 40px 16px;
+    background: rgba(6,9,16,0.62); overflow: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    width: 100%; max-width: 880px; background: var(--panel); border: 1px solid var(--line-strong);
+    border-radius: 14px; box-shadow: var(--shadow); padding: 20px 22px 22px;
+  }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .modal-head h3 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .modal-sec { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .modal-sec:first-of-type { border-top: none; padding-top: 6px; }
+  .modal-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .modal-sec-head h4 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .modal-sec-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .modal-note { font-size: 12px; color: var(--faint); line-height: 1.5; margin: 8px 0 12px; max-width: 74ch; }
+
+  .prof-table { display: flex; flex-direction: column; gap: 6px; }
+  .prof-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+  .prof-row .pr-name { flex: 1; min-width: 0; font-weight: 550; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prof-row .pr-meta { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
+
+  .db-switch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 2px; }
+  .db-switch label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+  .db-switch select {
+    min-width: 180px; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    border-radius: 7px; padding: 6px 8px; font-size: 13px;
+  }
+  .db-switch select:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .mini-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .mini-btn:disabled:hover { border-color: var(--line-strong); color: var(--muted); }
+  .db-table input:disabled, .db-table select:disabled { opacity: 0.6; cursor: default; }
+
+  .db-table-wrap { overflow-x: auto; margin-top: 4px; }
+  .db-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .db-table th {
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--faint); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line);
+  }
+  .db-table th .u { text-transform: none; letter-spacing: 0; margin-left: 3px; opacity: 0.7; }
+  .db-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .db-table input, .db-table select {
+    width: 100%; min-width: 0; background: var(--panel-2); border: 1px solid var(--line-strong); color: var(--text);
+    border-radius: 6px; padding: 4px 6px; font-size: 12px; font-family: inherit;
+  }
+  .db-table input.num { font-family: ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  .db-table input:focus, .db-table select:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
+  .db-table .c-name input { min-width: 120px; }
+  .db-table .c-num { width: 62px; }
+  .db-table .c-mid { width: 74px; }
+  .db-table .c-chk { text-align: center; width: 34px; }
+  .db-table .c-del { width: 30px; text-align: center; }
 </style>
 
 <div class="wrap">
@@ -295,6 +353,7 @@
   </header>
 
   <div class="layout">
+    <div class="leftcol">
     <div class="card diagram-card">
       <div class="view-toggle">
         <button data-view="hue" class="active">Hue</button>
@@ -307,6 +366,33 @@
       <div class="diagram-hint">
         <span id="diagHint">◆ laser primaries · ● D65 · hover inside the horseshoe to probe a color · shaded = reproducible gamut</span>
       </div>
+    </div>
+
+    <div class="card section" id="mixCard">
+      <h2>Mix &amp; Medium</h2>
+      <div class="controls">
+        <div class="mode-toggle" role="tablist">
+          <button id="modeRaw" class="active" data-mode="raw">Raw power</button>
+          <button id="modeBeam" data-mode="beam">Beam-corrected</button>
+        </div>
+        <div class="mode-toggle medium-toggle" role="tablist" title="How the beam is viewed — sets brightness weighting">
+          <button data-medium="screen">Screen</button>
+          <button data-medium="fog" class="active">Fog</button>
+          <button data-medium="haze">Haze</button>
+        </div>
+        <div class="ctrl-fields">
+          <div class="ctrl-field">
+            <label for="viewDist">Viewing distance</label>
+            <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
+          </div>
+        </div>
+        <div class="adapt-field" id="adaptField">
+          <label for="darkAdapt">Dark adaptation <span class="mono" id="adaptVal"></span></label>
+          <input id="darkAdapt" type="range" min="0" max="100" step="1" value="60">
+        </div>
+        <div class="mode-note" id="modeNote"></div>
+      </div>
+    </div>
     </div>
 
     <div class="rail">
@@ -326,8 +412,13 @@
         <div class="probe-mix mono" id="probeMix"></div>
       </div>
 
-      <div class="card section">
-        <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
+      <div class="card section" id="laserCard">
+        <h2>Laser Primaries
+          <span class="h2-actions">
+            <button class="mini-btn" id="dbBtn" title="Edit the laser database & manage saved setups">⚙ Database</button>
+            <span class="pill" id="countPill">0</span>
+          </span>
+        </h2>
         <div class="preset-row">
           <span class="preset-label">Preset</span>
           <button class="preset-btn" data-preset="rgbDiode">RGB diode</button>
@@ -335,63 +426,17 @@
           <button class="preset-btn" data-preset="allSTM">All STM</button>
           <button class="preset-btn" data-preset="allMTM">All MTM</button>
         </div>
-        <div class="controls">
-          <div class="mode-toggle" role="tablist">
-            <button id="modeRaw" class="active" data-mode="raw">Raw power</button>
-            <button id="modeBeam" data-mode="beam">Beam-corrected</button>
-          </div>
-          <div class="mode-toggle medium-toggle" role="tablist" title="How the beam is viewed — sets brightness weighting">
-            <button data-medium="screen">Screen</button>
-            <button data-medium="fog" class="active">Fog</button>
-            <button data-medium="haze">Haze</button>
-          </div>
-          <div class="ctrl-fields">
-            <div class="ctrl-field">
-              <label for="viewDist">Viewing distance</label>
-              <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
-            </div>
-          </div>
-          <div class="adapt-field" id="adaptField">
-            <label for="darkAdapt">Dark adaptation <span class="mono" id="adaptVal"></span></label>
-            <input id="darkAdapt" type="range" min="0" max="100" step="1" value="60">
-          </div>
-          <div class="mode-note" id="modeNote"></div>
+        <div class="preset-row saved-row">
+          <span class="preset-label">Saved</span>
+          <div class="profile-chips" id="profileChips"></div>
+          <button class="mini-btn accent" id="saveProfileBtn" title="Save the current lasers, on/off, and powers as a reusable setup">+ Save current</button>
         </div>
+        <div class="bank-hint">Click a laser to toggle it into the mix · <span class="mono">✎</span> to edit specs</div>
         <div id="laserList"></div>
         <div class="halo-note hidden" id="haloNote"></div>
         <div class="add-row">
           <select class="catalog-select" id="catalogSelect"></select>
           <button class="add-btn" id="addBtn">+ Add</button>
-        </div>
-      </div>
-
-      <div class="card section" id="hwCard">
-        <h2>Hardware <span class="pill" id="hwPill">—</span></h2>
-        <div class="readout-grid">
-          <div class="ro"><span class="k">Color channels</span><span class="v mono" id="hwCh">—</span></div>
-          <div class="ro"><span class="k">Required DAC</span><span class="v mono" id="hwDac">—</span></div>
-        </div>
-        <div class="hw-map" id="hwMap"></div>
-        <div class="mode-note" id="hwNote"></div>
-      </div>
-
-      <div class="card section">
-        <h2>Best Subset Finder</h2>
-        <p class="finder-desc">Search the listed lasers for the best combination — reaching D65, or the closest a single pair can get.</p>
-        <div class="finder-btns">
-          <button class="find-btn" data-mode="pair">Best pair</button>
-          <button class="find-btn" data-mode="fewest">Fewest lines</button>
-          <button class="find-btn" data-mode="widest">Widest gamut</button>
-        </div>
-        <div class="finder-result" id="finderResult">Pick a goal above — the winning lines are selected automatically.</div>
-      </div>
-
-      <div class="card section">
-        <h2>Gamut Coverage</h2>
-        <div id="coverage"></div>
-        <div class="readout-grid" style="margin-top:12px;">
-          <div class="ro"><span class="k">Gamut area (xy)</span><span class="v mono" id="gamutArea">—</span></div>
-          <div class="ro"><span class="k">Primaries used</span><span class="v mono" id="primCount">—</span></div>
         </div>
       </div>
     </div>
@@ -401,6 +446,56 @@
     Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the gamut is the convex hull of the primaries. The <b>Color Probe</b> solves the non-negative powers that reproduce the hovered color at maximum brightness. <b>Perceived brightness</b> (PB) weights radiant watts by a mesopic luminous-efficiency curve — the photopic V(λ) blended toward scotopic V′(λ) as dark adaptation rises (the Purkinje shift) — plus a cube-root compression; it's a relative index, not lumens, anchored so 1 W of 555 nm at daylight adaptation ≈ 100 PB. In <b>beam-corrected</b> mode required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)². Per-laser watts are the neutral-white balance; the ·max line is the limiting laser. Coherent OPSL specs are from datasheets; diode/DPSS and multimode figures are estimates. Beams assumed co-aligned. See the <a class="link" href="research.html" target="_blank" rel="noopener">color &amp; hardware research brief</a> for how show software (Pangolin BEYOND, Lasergraph DSP) drives multi-color projectors.
   </p>
 </div>
+
+<div class="modal-overlay" id="dbModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Laser Database &amp; Saved Setups</h3>
+      <button class="mini-btn" id="dbClose" title="Close">✕ Close</button>
+    </div>
+
+    <section class="modal-sec">
+      <div class="modal-sec-head">
+        <h4>Saved setups <span class="pill" id="profCountPill">0</span></h4>
+        <div class="modal-sec-btns">
+          <button class="mini-btn" id="profExport">⭳ Export</button>
+          <button class="mini-btn" id="profImport">⭱ Import</button>
+        </div>
+      </div>
+      <p class="modal-note">One-click restore of a full laser setup — the lasers, their on/off state, and every tuned power. Saved in this browser; export the JSON to move it between machines or commit it to the repo.</p>
+      <div id="profTable" class="prof-table"></div>
+    </section>
+
+    <section class="modal-sec">
+      <div class="modal-sec-head">
+        <h4>Laser database <span class="pill" id="dbCountPill">0</span></h4>
+        <div class="modal-sec-btns">
+          <button class="mini-btn" id="dbAdd">+ Add laser</button>
+          <button class="mini-btn" id="dbExport">⭳ Export</button>
+          <button class="mini-btn" id="dbImport">⭱ Import</button>
+        </div>
+      </div>
+      <div class="db-switch">
+        <label for="dbSelect">Database</label>
+        <select id="dbSelect"></select>
+        <button class="mini-btn" id="dbNew" title="Create your own editable copy of the current database">+ New</button>
+        <button class="mini-btn" id="dbRename">Rename</button>
+        <button class="mini-btn warn" id="dbDelete">Delete</button>
+      </div>
+      <p class="modal-note" id="dbNote"></p>
+      <div class="db-table-wrap">
+        <table class="db-table">
+          <thead><tr>
+            <th>Name</th><th>Type</th><th>Mode</th><th>λ</th><th>Ø<span class="u">mm</span></th><th>div<span class="u">mrad</span></th><th>def W</th><th></th>
+          </tr></thead>
+          <tbody id="dbBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept="application/json,.json" style="display:none">
 
 <script>
 "use strict";
@@ -591,64 +686,136 @@ function solveWhite(lasers, target){
    estimated beam). OPSL power is not tracked (varies by config). Diode/DPSS keep
    power (higher-power diodes combine multiple emitters → very different beams).
    diam = beam Ø at aperture (mm, 1/e²), diverg = full-angle (mrad). */
-const mk = (name,type,mode,wl,power_W,diam,diverg,est) =>
-  ({ name, brand: type==='OPSL' ? 'Coherent' : 'Generic', type, mode, wl, power_W, diam, diverg, est });
-const CATALOG = [
+const mk = (name,type,mode,wl,power_W,diam,diverg) =>
+  ({ name, brand: type==='OPSL' ? 'Coherent' : 'Generic', type, mode, wl, power_W, diam, diverg });
+const BUILTIN_CATALOG = [
   // OPSL STM (single transverse mode / TEM00; red 607/639 = 1.5 mrad, M²<1.2)
-  mk("OPSL 460 STM","OPSL","STM",460, null, 1.0, 0.7, false),
-  mk("OPSL 480 STM","OPSL","STM",480, null, 1.0, 0.7, false),
-  mk("OPSL 488 STM","OPSL","STM",488, null, 1.0, 0.7, false),
-  mk("OPSL 514 STM","OPSL","STM",514, null, 1.0, 0.7, false),
-  mk("OPSL 532 STM","OPSL","STM",532, null, 1.0, 0.7, false),
-  mk("OPSL 561 STM","OPSL","STM",561, null, 1.0, 0.7, false),
-  mk("OPSL 577 STM","OPSL","STM",577, null, 1.0, 0.7, false),
-  mk("OPSL 590 STM","OPSL","STM",590, null, 1.0, 0.7, false),
-  mk("OPSL 607 STM","OPSL","STM",607, null, 1.0, 1.5, false),
-  mk("OPSL 639 STM","OPSL","STM",639, null, 1.0, 1.5, false),
+  mk("OPSL 460 STM","OPSL","STM",460, null, 1.0, 0.7),
+  mk("OPSL 480 STM","OPSL","STM",480, null, 1.0, 0.7),
+  mk("OPSL 488 STM","OPSL","STM",488, null, 1.0, 0.7),
+  mk("OPSL 514 STM","OPSL","STM",514, null, 1.0, 0.7),
+  mk("OPSL 532 STM","OPSL","STM",532, null, 1.0, 0.7),
+  mk("OPSL 561 STM","OPSL","STM",561, null, 1.0, 0.7),
+  mk("OPSL 577 STM","OPSL","STM",577, null, 1.0, 0.7),
+  mk("OPSL 590 STM","OPSL","STM",590, null, 1.0, 0.7),
+  mk("OPSL 607 STM","OPSL","STM",607, null, 1.0, 1.5),
+  mk("OPSL 639 STM","OPSL","STM",639, null, 1.0, 1.5),
   // OPSL MTM (multi transverse mode; standard Taipan, M²<6) — beam figures estimated
-  mk("OPSL 460 MTM","OPSL","MTM",460, null, 1.5, 1.4, true),
-  mk("OPSL 480 MTM","OPSL","MTM",480, null, 1.6, 1.5, true),
-  mk("OPSL 488 MTM","OPSL","MTM",488, null, 1.6, 1.5, true),
-  mk("OPSL 514 MTM","OPSL","MTM",514, null, 1.8, 1.4, true),
-  mk("OPSL 532 MTM","OPSL","MTM",532, null, 1.8, 1.4, true),
-  mk("OPSL 561 MTM","OPSL","MTM",561, null, 1.8, 1.4, true),
-  mk("OPSL 577 MTM","OPSL","MTM",577, null, 1.8, 1.4, true),
-  mk("OPSL 590 MTM","OPSL","MTM",590, null, 1.8, 1.4, true),  // beam = 577 MTM
-  mk("OPSL 639 MTM","OPSL","MTM",639, null, 1.5, 1.5, true),
+  mk("OPSL 460 MTM","OPSL","MTM",460, null, 1.5, 1.4),
+  mk("OPSL 480 MTM","OPSL","MTM",480, null, 1.6, 1.5),
+  mk("OPSL 488 MTM","OPSL","MTM",488, null, 1.6, 1.5),
+  mk("OPSL 514 MTM","OPSL","MTM",514, null, 1.8, 1.4),
+  mk("OPSL 532 MTM","OPSL","MTM",532, null, 1.8, 1.4),
+  mk("OPSL 561 MTM","OPSL","MTM",561, null, 1.8, 1.4),
+  mk("OPSL 577 MTM","OPSL","MTM",577, null, 1.8, 1.4),
+  mk("OPSL 590 MTM","OPSL","MTM",590, null, 1.8, 1.4),  // beam = 577 MTM
+  mk("OPSL 639 MTM","OPSL","MTM",639, null, 1.5, 1.5),
   // Diode (generic, multi-mode/combined-emitter) — power tracked; beam estimated
-  mk("Diode 405","Diode","MTM",405, 0.3, 2.0, 1.2, true),
-  mk("Diode 445","Diode","MTM",445, 1.6, 3.0, 1.5, true),
-  mk("Diode 460","Diode","MTM",460, 1.0, 2.5, 1.5, true),
-  mk("Diode 520","Diode","MTM",520, 1.0, 2.0, 1.5, true),
-  mk("Diode 638","Diode","MTM",638, 0.7, 2.0, 1.2, true),
-  mk("Diode 660","Diode","MTM",660, 0.5, 2.0, 1.2, true),
+  mk("Diode 405","Diode","MTM",405, 0.3, 2.0, 1.2),
+  mk("Diode 445","Diode","MTM",445, 1.6, 3.0, 1.5),
+  mk("Diode 460","Diode","MTM",460, 1.0, 2.5, 1.5),
+  mk("Diode 520","Diode","MTM",520, 1.0, 2.0, 1.5),
+  mk("Diode 638","Diode","MTM",638, 0.7, 2.0, 1.2),
+  mk("Diode 660","Diode","MTM",660, 0.5, 2.0, 1.2),
   // DPSS (generic, near-diffraction-limited) — beam figures estimated
-  mk("DPSS 473","DPSS","STM",473, 0.1, 1.5, 1.2, true),
-  mk("DPSS 532","DPSS","STM",532, 0.1, 1.5, 1.0, true),
+  mk("DPSS 473","DPSS","STM",473, 0.1, 1.5, 1.2),
+  mk("DPSS 532","DPSS","STM",532, 0.1, 1.5, 1.0),
 ];
+
+/* ---------- editable laser databases (named catalogs) ----------
+   Everything is per-browser (localStorage) — no server, no accounts, so one user's
+   databases never touch another's. The BUILTIN_CATALOG is a read-only default that
+   is never mutated; users make their own named databases (copies) to edit. To share,
+   Export the JSON (or host your own copy of the site). */
+const LS_DBS = 'd65_databases_v1';
+const LS_CATALOG = 'd65_catalog_v1';     // legacy single-catalog store (migrated on load)
+const cloneCat = arr => arr.map(c => ({...c}));
+function clampWl(v){ return Math.max(380, Math.min(780, Math.round(+v||550))); }
+function normCat(c){
+  const type = ['OPSL','Diode','DPSS'].includes(c.type) ? c.type : 'Diode';
+  return { name:String(c.name||'Laser').slice(0,40), brand:c.brand||(type==='OPSL'?'Coherent':'Generic'),
+    type, mode:(c.mode==='STM'?'STM':'MTM'), wl:clampWl(c.wl),
+    power_W:(c.power_W==null||c.power_W==='' ? null : Math.max(0,+c.power_W||0)),
+    diam:Math.max(0.05,+c.diam||1), diverg:Math.max(0,+c.diverg||0) };
+}
+function dbUid(){ return 'db_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+// dbState = { activeId: 'builtin' | <id>, list: [ {id, name, catalog:[...]} ] }
+function sanitizeDbState(j){
+  const list = (Array.isArray(j.list)?j.list:[]).filter(d=>d&&d.id&&Array.isArray(d.catalog))
+    .map(d=>({ id:String(d.id), name:String(d.name||'Database').slice(0,40), catalog:d.catalog.map(normCat) }));
+  let activeId = j.activeId;
+  if(activeId!=='builtin' && !list.some(d=>d.id===activeId)) activeId = 'builtin';
+  return { activeId, list };
+}
+function loadDbState(){
+  try{ const j=JSON.parse(localStorage.getItem(LS_DBS)); if(j&&Array.isArray(j.list)) return sanitizeDbState(j); }catch(e){}
+  // migrate the older single-catalog store into a named database
+  try{ const legacy=JSON.parse(localStorage.getItem(LS_CATALOG));
+    if(Array.isArray(legacy)&&legacy.length){ const id=dbUid();
+      return { activeId:id, list:[{ id, name:'My catalog', catalog:legacy.map(normCat) }] }; }
+  }catch(e){}
+  return { activeId:'builtin', list:[] };
+}
+let dbState = loadDbState();
+function saveDbState(){ try{ localStorage.setItem(LS_DBS, JSON.stringify(dbState)); localStorage.removeItem(LS_CATALOG); }catch(e){} }
+function activeDb(){ return dbState.list.find(d=>d.id===dbState.activeId) || null; }
+function isBuiltinActive(){ return !activeDb(); }
+function activeDbName(){ const d=activeDb(); return d ? d.name : 'Built-in default'; }
+// CATALOG always mirrors the active database (a live reference to its array, so edits
+// persist by mutating it + saveDbState). Built-in active → a throwaway clone (read-only).
+let CATALOG;
+function refreshCatalog(){ const d=activeDb(); CATALOG = d ? d.catalog : cloneCat(BUILTIN_CATALOG); }
+refreshCatalog();
+// finalize a one-time migration from the legacy single-catalog store (persist + drop old key)
+if(localStorage.getItem(LS_CATALOG)!=null && dbState.list.length) saveDbState();
+function saveCatalog(){ saveDbState(); }   // edits mutate CATALOG (= activeDb().catalog) in place
+function selectDb(id){ dbState.activeId = id; refreshCatalog(); saveDbState(); }
 
 /* ---------- state ---------- */
 let idc = 0;
 function instFromCatalog(cat, on){
   return { id:++idc, name:cat.name, type:cat.type, mode:cat.mode, wl:cat.wl,
            diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W,
-           pmax:(cat.power_W!=null ? cat.power_W : 1.0), est:cat.est, on:!!on };
+           pmax:(cat.power_W!=null ? cat.power_W : 1.0), on:!!on };
 }
-// Preset laser sets (by catalog name), applied via the preset buttons.
+// Preset laser sets. rgb* are explicit name lists; all* are computed live from the
+// current catalog so they keep working after database edits.
 const PRESETS = {
   rgbDiode: ["Diode 460","Diode 520","Diode 638"],
   rgbOPSL:  ["OPSL 480 STM","OPSL 532 STM","OPSL 639 STM"],
-  allSTM:   CATALOG.filter(c=>c.type==='OPSL' && c.mode==='STM').map(c=>c.name),
-  allMTM:   CATALOG.filter(c=>c.type==='OPSL' && c.mode==='MTM').map(c=>c.name),
 };
+function presetNames(key){
+  if(key==='allSTM') return CATALOG.filter(c=>c.type==='OPSL'&&c.mode==='STM').map(c=>c.name);
+  if(key==='allMTM') return CATALOG.filter(c=>c.type==='OPSL'&&c.mode==='MTM').map(c=>c.name);
+  return PRESETS[key]||[];
+}
 function presetLasers(key){
-  return (PRESETS[key]||[]).map(nm => instFromCatalog(CATALOG.find(c=>c.name===nm), true));
+  return presetNames(key).map(nm => CATALOG.find(c=>c.name===nm)).filter(Boolean).map(c=>instFromCatalog(c,true));
 }
 let lasers = presetLasers('rgbDiode');   // default preset
 const activeLasers = () => lasers.filter(l => l.on);
 // Sort by wavelength; same-wavelength lasers group together by name (deterministic).
 function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || (a.mode==='STM'?0:1)-(b.mode==='STM'?0:1) || a.name.localeCompare(b.name)); }
 sortLasers();
+
+/* ---------- saved profiles (full laser setups incl. tuned powers) ---------- */
+const LS_PROFILES = 'd65_profiles_v1';
+let profiles = loadProfiles();
+function loadProfiles(){
+  try{ const j=JSON.parse(localStorage.getItem(LS_PROFILES)); if(Array.isArray(j)) return j.filter(p=>p&&p.name&&Array.isArray(p.lasers)); }catch(e){}
+  return [];
+}
+function saveProfilesLS(){ try{ localStorage.setItem(LS_PROFILES, JSON.stringify(profiles)); }catch(e){} }
+function snapshotLasers(){
+  return lasers.map(l=>({ name:l.name, type:l.type, mode:l.mode, wl:l.wl, diam:l.diam,
+    diverg:l.diverg, power_W:l.power_W, pmax:l.pmax, on:l.on }));
+}
+function lasersFromSnapshot(snap){
+  return (snap||[]).map(s=>({ id:++idc, name:s.name||'Laser', type:s.type||'Diode', mode:(s.mode==='STM'?'STM':'MTM'),
+    wl:clampWl(s.wl), diam:Math.max(0.05,+s.diam||1), diverg:Math.max(0,+s.diverg||0),
+    power_W:(s.power_W==null?null:+s.power_W), pmax:(s.pmax!=null?+s.pmax:(s.power_W!=null?+s.power_W:1.0)),
+    on:s.on!==false }));
+}
 
 /* ---------- beam geometry ---------- */
 let mixMode = 'raw';   // 'raw' | 'beam'
@@ -847,6 +1014,7 @@ function recompute(){
 
 /* ---------- UI: rail ---------- */
 const laserList = document.getElementById('laserList');
+let editingId = null;   // laser id whose spec editor is expanded (null = none)
 function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 function updateModeNote(){
@@ -907,23 +1075,6 @@ function renderProbe(){
   detail.textContent='Max brightness here, and the power mix to make it:';
   lmEl.textContent = fmtBright(bright);
   mixEl.innerHTML = parts.join('');
-}
-
-/* ---------- hardware target (ILDA / DAC channels) ---------- */
-function renderHardware(){
-  const active = activeLasers(), n = active.length;
-  const pill=document.getElementById('hwPill'), map=document.getElementById('hwMap'), note=document.getElementById('hwNote');
-  const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
-  setTxt('hwCh', String(n));
-  if(n===0){ pill.textContent='—'; pill.className='pill'; setTxt('hwDac','—'); map.innerHTML=''; note.textContent=''; return; }
-  const band = wl => wl<=445?'Deep-Blue':wl<=475?'Blue':wl<=505?'Cyan':wl<=560?'Green':wl<=595?'Yellow':'Red';
-  map.innerHTML = active.slice().sort((a,b)=>a.wl-b.wl).map(l=>`<span class="hw-chip"><b>${l.wl}</b> → ${band(l.wl)}</span>`).join('');
-  let dac, cls, msg;
-  if(n<=3){ dac='Any RGB DAC (Helios / Ether Dream / FB4)'; cls='ok'; msg='Fits a standard 3-color ILDA path.'; }
-  else if(n<=6){ dac='FB4 or Lasergraph DSP (6-color)'; cls='ok'; msg=`${n} colors need dedicated DAC outputs (e.g. FB4 Color 4–${Math.min(n,6)}) — a plain 3-wire RGB ILDA feed can't light the extras.`; }
-  else { dac='⚠ exceeds 6 — needs 2× DAC / projector'; cls='warn'; msg=`${n} colors exceed the 6-channel ILDA/FB4 ceiling; split across two DACs or projectors.`; }
-  pill.textContent = n<=3?'RGB':(n<=6?'multi-color':'over 6'); pill.className='pill '+cls;
-  setTxt('hwDac', dac); note.textContent = msg;
 }
 
 /* ---------- brightness heatmap (max achievable brightness across the gamut) ---------- */
@@ -1038,71 +1189,54 @@ function renderRail(sol, hull, powerById, totalP){
   lasers.forEach((l)=>{
     const p = xyOfWavelength(l.wl);
     const actualW = l.on ? kMax*reqW[l.id] : 0;
-    const cap = l.pmax||0;
-    const pctMax = (l.on && cap>0) ? Math.min(100, actualW/cap*100) : 0;
     const isLimit = l.on && l.id===limitId;
-    const valHtml = l.on ? `${actualW.toFixed(2)} W` : '—';
-    const spot = spotDia(l);
-    const spotHtml = (mixMode==='beam' && z>0)
-      ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
-      : `<span class="spot-tag muted" title="beam Ø at aperture">Ø ${l.diam.toFixed(1)} mm</span>`;
-    const row=document.createElement('div'); row.className='laser-row' + (l.on ? '' : ' off');
-    row.innerHTML = `
-      <div class="lr-head">
-        <input class="on-box" type="checkbox" data-on="${l.id}" ${l.on?'checked':''} title="Include in mix">
-        <div class="laser-swatch" style="background:${chromaToCss(p[0],p[1])}"></div>
-        <input class="name-input" type="text" value="${escAttr(l.name)}" data-id="${l.id}" data-field="name" title="Laser name">
-        <span class="type-badge ${l.type}">${l.type}</span>
-        ${l.mode?`<span class="mode-tag">${l.mode}</span>`:''}
-        <button class="del-btn" data-del="${l.id}" title="Remove">×</button>
-      </div>
-      <div class="lr-specs">
-        <span class="spec">λ <input class="spec-input wl mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}" data-field="wl"> nm</span>
-        <span class="spec">Ø <input class="spec-input mono" type="number" min="0.1" step="0.1" value="${l.diam}" data-id="${l.id}" data-field="diam"> mm</span>
-        <span class="spec">div <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.diverg}" data-id="${l.id}" data-field="diverg"> mrad</span>
-        <span class="spec">max <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.pmax}" data-id="${l.id}" data-field="pmax"> W</span>
-        ${l.est?'<span class="spec est" title="beam specs are representative estimates, not from a datasheet">est</span>':''}
-        ${spotHtml}
-      </div>
-      <div class="power-line" title="fill = share of this laser's max power; unfilled = headroom">
-        <div class="power-bar"><div class="power-fill" style="width:${pctMax.toFixed(1)}%"></div></div>
-        <span class="power-val mono${isLimit?' limit':''}">${valHtml}${isLimit?' ·max':''}</span>
-      </div>`;
-    laserList.appendChild(row);
+    const powHtml = l.on
+      ? `<span class="chip-pow${isLimit?' limit':''}" title="neutral-white power${isLimit?' · limiting laser':''}">${actualW.toFixed(2)} W${isLimit?' ·max':''}</span>`
+      : '';
+    const chip=document.createElement('div');
+    chip.className = `chip ${l.type} ${l.on?'on':'off'}`;
+    chip.dataset.on = l.id;
+    chip.innerHTML = `
+      <div class="chip-sw" style="background:${chromaToCss(p[0],p[1])}"></div>
+      <span class="chip-name" title="${escAttr(l.name)}">${escAttr(l.name)}</span>
+      ${powHtml}
+      <button class="chip-edit${editingId===l.id?' active':''}" data-edit="${l.id}" title="Edit specs">✎</button>`;
+    laserList.appendChild(chip);
+
+    if(editingId===l.id){
+      const spot = spotDia(l);
+      const spotHtml = (mixMode==='beam' && z>0)
+        ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
+        : `<span class="spot-tag muted" title="beam Ø at aperture">Ø ${l.diam.toFixed(1)} mm</span>`;
+      const ed=document.createElement('div'); ed.className='chip-editor';
+      ed.innerHTML = `
+        <div class="ce-head">
+          <input class="name-input" type="text" value="${escAttr(l.name)}" data-id="${l.id}" data-field="name" title="Laser name">
+          <span class="type-badge ${l.type}">${l.type}</span>
+          ${l.mode?`<span class="mode-tag">${l.mode}</span>`:''}
+          <button class="del-btn" data-del="${l.id}" title="Remove">×</button>
+        </div>
+        <div class="ce-specs">
+          <span class="spec">λ <input class="spec-input wl mono" type="number" min="400" max="700" step="1" value="${l.wl}" data-id="${l.id}" data-field="wl"> nm</span>
+          <span class="spec">Ø <input class="spec-input mono" type="number" min="0.1" step="0.1" value="${l.diam}" data-id="${l.id}" data-field="diam"> mm</span>
+          <span class="spec">div <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.diverg}" data-id="${l.id}" data-field="diverg"> mrad</span>
+          <span class="spec">max <input class="spec-input mono" type="number" min="0" step="0.1" value="${l.pmax}" data-id="${l.id}" data-field="pmax"> W</span>
+          ${spotHtml}
+        </div>`;
+      laserList.appendChild(ed);
+    }
   });
 
-  renderHardware();
   renderProbe();
   updateHalo();
   updateModeNote();
-
-  // coverage
-  const cov=document.getElementById('coverage'); cov.innerHTML='';
-  Object.entries(STD).forEach(([name,g])=>{
-    let pctCov=0;
-    if(hull.length>=3){ const inter=clipPoly(g.tri, hull); pctCov = polyArea(inter)/polyArea(g.tri)*100; }
-    pctCov=Math.max(0,Math.min(100,pctCov));
-    const row=document.createElement('div'); row.className='cov-row';
-    row.innerHTML=`
-      <div class="cov-name">${name} <small>${g.sub}</small></div>
-      <div class="cov-bar"><div class="cov-fill" style="width:${pctCov.toFixed(0)}%;background:${g.color}"></div></div>
-      <div class="cov-val mono">${pctCov.toFixed(0)}%</div>`;
-    cov.appendChild(row);
-  });
-  document.getElementById('gamutArea').textContent = hull.length>=3 ? polyArea(hull).toFixed(4) : '0';
-  document.getElementById('primCount').textContent = nActive;
 }
 
 /* ---------- events ---------- */
 laserList.addEventListener('change', e=>{
-  clearPreset();
-  if(e.target.classList.contains('on-box')){
-    const l=lasers.find(x=>x.id===+e.target.dataset.on);
-    if(l){ l.on=e.target.checked; recompute(); }
-    return;
-  }
   const id=+e.target.dataset.id, field=e.target.dataset.field;
   if(!id || !field) return;
+  clearPreset();
   const l=lasers.find(x=>x.id===id); if(!l) return;
   if(field==='name'){ l.name=e.target.value.trim()||l.name; recompute(); return; }
   let v=parseFloat(e.target.value);
@@ -1114,8 +1248,12 @@ laserList.addEventListener('change', e=>{
   recompute();
 });
 laserList.addEventListener('click', e=>{
-  const del=e.target.dataset.del;
-  if(del){ clearPreset(); lasers=lasers.filter(x=>x.id!==+del); recompute(); }
+  const editBtn=e.target.closest('[data-edit]');
+  if(editBtn){ const id=+editBtn.dataset.edit; editingId = editingId===id ? null : id; recompute(); return; }
+  const del=e.target.closest('[data-del]');
+  if(del){ clearPreset(); const id=+del.dataset.del; lasers=lasers.filter(x=>x.id!==id); if(editingId===id) editingId=null; recompute(); return; }
+  const chip=e.target.closest('[data-on]');
+  if(chip){ clearPreset(); const l=lasers.find(x=>x.id===+chip.dataset.on); if(l){ l.on=!l.on; recompute(); } }
 });
 
 // catalog picker
@@ -1140,7 +1278,7 @@ function addFromCatalog(){
   clearPreset();
   const val=document.getElementById('catalogSelect').value;
   if(val==='custom'){
-    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MTM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, pmax:1.0, est:true, on:true});
+    lasers.push({id:++idc, name:'Custom laser', type:'Diode', mode:'MTM', wl:550, diam:2.0, diverg:1.0, power_W:1.0, pmax:1.0, on:true});
   } else {
     const cat=CATALOG[+val]; if(!cat) return;
     lasers.push(instFromCatalog(cat, true));
@@ -1191,6 +1329,215 @@ function applyPreset(key){
 document.querySelectorAll('.preset-btn').forEach(b=>{
   b.addEventListener('click', ()=>applyPreset(b.dataset.preset));
 });
+
+/* ---------- saved profiles: inline chips ---------- */
+function renderProfiles(){
+  const box=document.getElementById('profileChips'); if(!box) return;
+  const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
+  if(!profiles.length){ box.innerHTML='<span class="profile-empty">No saved setups yet — tune your lasers, then “Save current”.</span>'; return; }
+  box.innerHTML='';
+  profiles.forEach((p,i)=>{
+    const nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
+    const chip=document.createElement('span'); chip.className='profile-chip'; chip.dataset.load=i;
+    chip.title=`${p.name} — ${nOn} laser${nOn===1?'':'s'} on · click to load`;
+    chip.innerHTML=`<span class="nm">${escAttr(p.name)}</span><span class="x" data-del="${i}" title="Delete">×</span>`;
+    box.appendChild(chip);
+  });
+}
+function saveCurrentProfile(){
+  const name=(window.prompt('Save current setup as:', 'Setup '+(profiles.length+1))||'').trim();
+  if(!name) return;
+  const snap=snapshotLasers();
+  const at=profiles.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+  if(at>=0){ if(!window.confirm(`Overwrite “${profiles[at].name}”?`)) return; profiles[at]={name, lasers:snap}; }
+  else profiles.push({name, lasers:snap});
+  saveProfilesLS(); renderProfiles(); renderProfTable();
+}
+function loadProfileByIndex(i){
+  const p=profiles[i]; if(!p) return;
+  clearPreset(); editingId=null;
+  lasers=lasersFromSnapshot(p.lasers);
+  sortLasers(); recompute();
+}
+function deleteProfileByIndex(i){
+  if(!profiles[i]) return;
+  if(!window.confirm(`Delete saved setup “${profiles[i].name}”?`)) return;
+  profiles.splice(i,1); saveProfilesLS(); renderProfiles(); renderProfTable();
+}
+document.getElementById('saveProfileBtn').addEventListener('click', saveCurrentProfile);
+document.getElementById('profileChips').addEventListener('click', e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){ e.stopPropagation(); deleteProfileByIndex(+del.dataset.del); return; }
+  const chip=e.target.closest('[data-load]');
+  if(chip) loadProfileByIndex(+chip.dataset.load);
+});
+
+/* ---------- JSON export / import ---------- */
+function downloadJSON(filename, obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+let importTarget=null;   // 'profiles' | 'catalog'
+const importFileEl=document.getElementById('importFile');
+function pickImport(target){ importTarget=target; importFileEl.value=''; importFileEl.click(); }
+importFileEl.addEventListener('change', e=>{
+  const file=e.target.files && e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let data; try{ data=JSON.parse(reader.result); }catch(err){ window.alert('That file is not valid JSON.'); return; }
+    if(importTarget==='profiles'){
+      const arr=Array.isArray(data)?data:(Array.isArray(data.profiles)?data.profiles:null);
+      const clean=(arr||[]).filter(p=>p&&p.name&&Array.isArray(p.lasers));
+      if(!clean.length){ window.alert('No valid saved setups found in that file.'); return; }
+      const replace=window.confirm(`Import ${clean.length} setup(s).\n\nOK = replace all current saved setups.\nCancel = merge (add to existing).`);
+      profiles = replace ? clean : profiles.concat(clean);
+      saveProfilesLS(); renderProfiles(); renderProfTable();
+    } else if(importTarget==='catalog'){
+      const arr=Array.isArray(data)?data:(Array.isArray(data.catalog)?data.catalog:null);
+      if(!arr || !arr.length){ window.alert('Expected a JSON array of lasers.'); return; }
+      const base=(file.name||'Imported').replace(/\.json$/i,'');
+      const name=(window.prompt('Name this imported database:', base)||'').trim();
+      if(!name) return;
+      createDb(name, arr);   // creates + selects a new database — never overwrites an existing one
+      renderDb(); populateCatalog();
+    }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('profExport').addEventListener('click', ()=>{
+  if(!profiles.length){ window.alert('No saved setups to export yet.'); return; }
+  downloadJSON('d65-laser-setups.json', profiles);
+});
+document.getElementById('profImport').addEventListener('click', ()=>pickImport('profiles'));
+document.getElementById('dbExport').addEventListener('click', ()=>downloadJSON('d65-laser-catalog.json', CATALOG));
+document.getElementById('dbImport').addEventListener('click', ()=>pickImport('catalog'));
+
+/* ---------- laser database editor (modal) ---------- */
+function renderProfTable(){
+  const box=document.getElementById('profTable'); if(!box) return;
+  const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
+  if(!profiles.length){ box.innerHTML='<p class="modal-note">No saved setups yet.</p>'; return; }
+  box.innerHTML='';
+  profiles.forEach((p,i)=>{
+    const n=(p.lasers||[]).length, nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
+    const row=document.createElement('div'); row.className='prof-row';
+    row.innerHTML=`
+      <span class="pr-name">${escAttr(p.name)}</span>
+      <span class="pr-meta">${nOn}/${n} on</span>
+      <button class="mini-btn" data-load="${i}">Load</button>
+      <button class="mini-btn warn" data-del="${i}">Delete</button>`;
+    box.appendChild(row);
+  });
+}
+document.getElementById('profTable').addEventListener('click', e=>{
+  const load=e.target.closest('[data-load]'); if(load){ loadProfileByIndex(+load.dataset.load); return; }
+  const del=e.target.closest('[data-del]'); if(del){ deleteProfileByIndex(+del.dataset.del); }
+});
+
+const DB_TYPES=['OPSL','Diode','DPSS'], DB_MODES=['STM','MTM'];
+function renderDbSwitcher(){
+  const sel=document.getElementById('dbSelect'); if(!sel) return;
+  let html='<option value="builtin">Built-in default 🔒</option>';
+  dbState.list.forEach(d=>{ html+=`<option value="${d.id}">${escAttr(d.name)}</option>`; });
+  sel.innerHTML=html;
+  sel.value = isBuiltinActive() ? 'builtin' : dbState.activeId;
+  const ro=isBuiltinActive();
+  document.getElementById('dbRename').disabled=ro;
+  document.getElementById('dbDelete').disabled=ro;
+  document.getElementById('dbAdd').disabled=ro;
+  const note=document.getElementById('dbNote');
+  note.innerHTML = ro
+    ? 'The <b>built-in default</b> is read-only, so it always stays pristine. Click <b>+ New</b> to make your own editable copy — your databases live only in this browser and never affect anyone else’s or the default.'
+    : '<b>Default W</b> is the power a laser starts at when added (blank = “not tracked”, starts at 1&nbsp;W). Editing <b>“'+escAttr(activeDbName())+'”</b>, saved in this browser. <b>Export</b> to back up, share, or commit to the repo.';
+}
+function renderDbTable(){
+  const body=document.getElementById('dbBody'); if(!body) return;
+  const pill=document.getElementById('dbCountPill'); if(pill) pill.textContent=String(CATALOG.length);
+  const ro=isBuiltinActive(), d=ro?'disabled':'';
+  body.innerHTML='';
+  CATALOG.forEach((c,i)=>{
+    const tr=document.createElement('tr'); tr.dataset.idx=i;
+    const typeOpts=DB_TYPES.map(t=>`<option ${t===c.type?'selected':''}>${t}</option>`).join('');
+    const modeOpts=DB_MODES.map(m=>`<option ${m===c.mode?'selected':''}>${m}</option>`).join('');
+    tr.innerHTML=`
+      <td class="c-name"><input data-f="name" value="${escAttr(c.name)}" ${d}></td>
+      <td class="c-mid"><select data-f="type" ${d}>${typeOpts}</select></td>
+      <td class="c-mid"><select data-f="mode" ${d}>${modeOpts}</select></td>
+      <td class="c-num"><input class="num" data-f="wl" type="number" min="380" max="780" step="1" value="${c.wl}" ${d}></td>
+      <td class="c-num"><input class="num" data-f="diam" type="number" min="0.1" step="0.1" value="${c.diam}" ${d}></td>
+      <td class="c-num"><input class="num" data-f="diverg" type="number" min="0" step="0.1" value="${c.diverg}" ${d}></td>
+      <td class="c-num"><input class="num" data-f="power_W" type="number" min="0" step="0.1" value="${c.power_W==null?'':c.power_W}" placeholder="—" ${d}></td>
+      <td class="c-del">${ro?'':`<button class="mini-btn warn" data-del="${i}" title="Remove">×</button>`}</td>`;
+    body.appendChild(tr);
+  });
+}
+function renderDb(){ renderDbSwitcher(); renderDbTable(); }
+
+document.getElementById('dbBody').addEventListener('input', e=>{
+  if(isBuiltinActive()) return;
+  const tr=e.target.closest('tr'); if(!tr) return;
+  const i=+tr.dataset.idx, f=e.target.dataset.f, c=CATALOG[i]; if(!c||!f) return;
+  if(f==='power_W') c.power_W = e.target.value==='' ? null : Math.max(0, parseFloat(e.target.value)||0);
+  else if(f==='wl') c.wl = clampWl(e.target.value);
+  else if(f==='diam') c.diam = Math.max(0.05, parseFloat(e.target.value)||1);
+  else if(f==='diverg') c.diverg = Math.max(0, parseFloat(e.target.value)||0);
+  else if(f==='name') c.name = e.target.value.slice(0,40);
+  else if(f==='type'){ c.type = DB_TYPES.includes(e.target.value)?e.target.value:'Diode'; c.brand = c.type==='OPSL'?'Coherent':'Generic'; }
+  else if(f==='mode') c.mode = e.target.value==='STM'?'STM':'MTM';
+  saveCatalog(); populateCatalog();
+});
+document.getElementById('dbBody').addEventListener('click', e=>{
+  const del=e.target.closest('[data-del]'); if(!del || isBuiltinActive()) return;
+  CATALOG.splice(+del.dataset.del,1); saveCatalog(); renderDbTable(); populateCatalog();
+});
+document.getElementById('dbAdd').addEventListener('click', ()=>{
+  if(isBuiltinActive()) return;
+  CATALOG.push(normCat({name:'New laser', type:'Diode', mode:'MTM', wl:550, power_W:1.0, diam:2.0, diverg:1.2}));
+  saveCatalog(); renderDbTable(); populateCatalog();
+  const body=document.getElementById('dbBody');
+  if(body.lastElementChild){ body.lastElementChild.scrollIntoView({block:'nearest'}); const inp=body.lastElementChild.querySelector('input'); if(inp) inp.focus(); }
+});
+
+/* database switcher: select / new (copy) / rename / delete */
+function createDb(name, catalog){
+  const id=dbUid();
+  dbState.list.push({ id, name:String(name).slice(0,40), catalog: cloneCat(catalog).map(normCat) });
+  selectDb(id);
+}
+document.getElementById('dbSelect').addEventListener('change', e=>{
+  selectDb(e.target.value==='builtin' ? 'builtin' : e.target.value);
+  renderDb(); populateCatalog();
+});
+document.getElementById('dbNew').addEventListener('click', ()=>{
+  const base = isBuiltinActive() ? 'My catalog' : activeDbName()+' copy';
+  const name=(window.prompt('Name your new database (an editable copy of “'+activeDbName()+'”):', base)||'').trim();
+  if(!name) return;
+  createDb(name, CATALOG);
+  renderDb(); populateCatalog();
+});
+document.getElementById('dbRename').addEventListener('click', ()=>{
+  const d=activeDb(); if(!d) return;
+  const name=(window.prompt('Rename database:', d.name)||'').trim();
+  if(!name) return;
+  d.name=name.slice(0,40); saveDbState(); renderDb();
+});
+document.getElementById('dbDelete').addEventListener('click', ()=>{
+  const d=activeDb(); if(!d) return;
+  if(!window.confirm(`Delete database “${d.name}”? Your current laser mix stays as-is.`)) return;
+  dbState.list = dbState.list.filter(x=>x.id!==d.id);
+  selectDb('builtin'); renderDb(); populateCatalog();
+});
+
+/* modal open/close */
+function openDbModal(){ renderProfTable(); renderDb(); document.getElementById('dbModal').classList.add('open'); }
+function closeDbModal(){ document.getElementById('dbModal').classList.remove('open'); }
+document.getElementById('dbBtn').addEventListener('click', openDbModal);
+document.getElementById('dbClose').addEventListener('click', closeDbModal);
+document.getElementById('dbModal').addEventListener('click', e=>{ if(e.target.id==='dbModal') closeDbModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && document.getElementById('dbModal').classList.contains('open')) closeDbModal(); });
 
 /* ---------- best subset finder ---------- */
 const WHITE_TOL = 0.003;      // xy distance considered "white"
@@ -1253,37 +1600,11 @@ function applySubset(ids){
   lasers.forEach(l=> l.on = set.has(l.id));
   recompute();
 }
-const finderResult = document.getElementById('finderResult');
-document.querySelectorAll('.find-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const mode = btn.dataset.mode;
-    finderResult.innerHTML = 'Searching combinations…';
-    setTimeout(()=>{
-      if(mode==='pair'){
-        const bp = findBestPair();
-        if(!bp){ finderResult.innerHTML = '<span class="win none">Add at least two lasers to the list.</span>'; return; }
-        applySubset(bp.ids);
-        const quality = bp.dist < 0.0045 ? 'reaches D65'
-                      : bp.dist < 0.02   ? 'near-white (best a pair can do)'
-                      : 'closest a single pair can get';
-        finderResult.innerHTML =
-          `<span class="win">Best pair: ${bp.wls.join(' + ')} nm</span><br>` +
-          `<span class="metrics">2 lasers · Δ ${bp.dist.toFixed(4)} to D65 · ${quality}</span>`;
-        return;
-      }
-      const best = findBestSubset(mode);
-      if(!best){
-        finderResult.innerHTML = `<span class="win none">No 2–${Math.min(6,lasers.length)} line combination reaches D65.</span><br>Add a line that spreads the gamut wider (a deeper blue or a red), then try again.`;
-        return;
-      }
-      applySubset(best.ids);
-      const label = mode==='fewest' ? 'Fewest lines' : 'Widest gamut';
-      finderResult.innerHTML =
-        `<span class="win">${label}: ${best.wls.join(' + ')} nm</span><br>` +
-        `<span class="metrics">${best.k} lines · Δ ${best.dist.toFixed(4)} to D65 · Rec.2020 ${best.rec2020.toFixed(0)}%</span>`;
-    }, 20);
-  });
-});
+// NOTE: the Best Subset Finder UI/tile was removed 2026-07-13 (superseded by saved
+// presets). The logic above — findBestSubset / findBestPair / combinations / rec2020Cov
+// / applySubset — is intentionally retained for a future low/zero-CRI "best pair" white
+// experiment. To re-surface it, add a tile with .find-btn[data-mode] buttons + #finderResult
+// and re-wire click → findBestPair()/findBestSubset(mode) → applySubset(...).
 
 /* color probe on hover (lasers aren't tunable, so points aren't draggable) */
 const dragId = null;   // kept for draw()/heatmap guards; nothing is ever dragged
@@ -1313,6 +1634,7 @@ let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(
 
 populateCatalog();
 setActivePreset('rgbDiode');
+renderProfiles();
 updateAdaptLabel();
 setupCanvas();
 recompute();
