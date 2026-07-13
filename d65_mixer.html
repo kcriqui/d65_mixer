@@ -207,6 +207,11 @@
   .ctrl-field input:focus { outline: 1.5px solid var(--accent); border-color: var(--accent); }
   .ctrl-field .u { font-size: 11px; color: var(--faint); flex: none; }
   .mode-note { font-size: 11.5px; color: var(--faint); line-height: 1.45; }
+  .adapt-field { display: flex; flex-direction: column; gap: 5px; }
+  .adapt-field.hidden { display: none; }
+  .adapt-field label { font-size: 11px; color: var(--faint); display: flex; gap: 8px; }
+  .adapt-field label .mono { color: var(--accent); }
+  .adapt-field input[type=range] { width: 100%; accent-color: var(--accent); height: 18px; margin: 0; cursor: pointer; }
 
   .halo-note {
     margin-top: 12px; font-size: 12px; line-height: 1.45; padding: 9px 11px; border-radius: 8px;
@@ -351,11 +356,19 @@
             <button data-medium="fog" class="active">Fog</button>
             <button data-medium="haze">Haze</button>
           </div>
+          <div class="mode-toggle metric-toggle" role="tablist" title="Photometric lumens vs perceived brightness">
+            <button data-metric="photometric" class="active">Photometric</button>
+            <button data-metric="perceived">Perceived</button>
+          </div>
           <div class="ctrl-fields">
             <div class="ctrl-field">
               <label for="viewDist">Viewing distance</label>
               <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
             </div>
+          </div>
+          <div class="adapt-field hidden" id="adaptField">
+            <label for="darkAdapt">Dark adaptation <span class="mono" id="adaptVal"></span></label>
+            <input id="darkAdapt" type="range" min="0" max="100" step="1" value="60">
           </div>
           <div class="mode-note" id="modeNote"></div>
         </div>
@@ -427,6 +440,17 @@ function cmfAt(wl) {
 function xyOfWavelength(wl) {
   const [X,Y,Z] = cmfAt(wl), s = X+Y+Z;
   return s > 0 ? [X/s, Y/s] : [0,0];
+}
+
+/* CIE 1951 scotopic luminous efficiency V'(λ), 380–780 nm @ 5 nm (peak 1.0 at 507 nm).
+   Used for the dark-adapted / mesopic weighting in Perceived-brightness mode. */
+const VPRIME = [0.000589,0.001108,0.002209,0.004530,0.009290,0.018520,0.034840,0.060400,0.096600,0.143700,0.199800,0.262500,0.328100,0.393100,0.455000,0.513000,0.567000,0.620000,0.676000,0.734000,0.793000,0.851000,0.904000,0.949000,0.982000,0.998000,0.997000,0.975000,0.935000,0.880000,0.811000,0.733000,0.650000,0.564000,0.481000,0.402000,0.328800,0.264000,0.207600,0.160200,0.121200,0.089900,0.065500,0.046900,0.033150,0.023120,0.015930,0.010880,0.007370,0.004970,0.003335,0.002235,0.001497,0.001005,0.000677,0.000459,0.000313,0.000215,0.000148,0.000103,0.0000715,0.0000501,0.0000354,0.0000252,0.0000178,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+function vprime(wl){
+  if(wl<=CMF_START) return VPRIME[0];
+  const maxWl=CMF_START+CMF_STEP*(VPRIME.length-1);
+  if(wl>=maxWl) return VPRIME[VPRIME.length-1];
+  const f=(wl-CMF_START)/CMF_STEP, i=Math.floor(f), t=f-i;
+  return VPRIME[i]+t*(VPRIME[i+1]-VPRIME[i]);
 }
 
 /* Spectral locus polygon (for containment + drawing), 380–700 nm */
@@ -657,9 +681,27 @@ function scatter(wl){
   if(medium==='haze'){ const r=555/wl; return r*r*r*r; }
   return 1;
 }
-// Apparent luminous output (lm, relative index in haze) of `watts` radiant at wl.
-function apparentLm(wl, watts){ return 683 * cmfAt(wl)[1] * scatter(wl) * watts; }
+
+/* ---------- perceived brightness (mesopic + compression) ---------- */
+let perceived = false;   // false = photometric lumens, true = perceived-brightness model
+function darkAdapt(){ return Math.max(0, Math.min(1, (parseFloat((document.getElementById('darkAdapt')||{}).value)||0)/100)); }
+// Luminous-efficiency weight: photopic V(λ), or a mesopic blend toward scotopic V'(λ)
+// as dark adaptation rises (the Purkinje shift toward ~507 nm).
+function lumWeight(wl){
+  const V = cmfAt(wl)[1];
+  if(!perceived) return V;
+  const a = darkAdapt();
+  return (1-a)*V + a*vprime(wl);
+}
+// Linear "brightness flux" of `watts` radiant at wl (mesopic + medium weighted).
+function apparentLm(wl, watts){ return 683 * lumWeight(wl) * scatter(wl) * watts; }
 const fmtLm = lm => lm>=1000 ? (lm/1000).toFixed(1)+'k lm' : Math.round(lm)+' lm';
+// Headline brightness: photometric lumens, or a compressed perceptual index (PB),
+// anchored so 1 W of 555 nm at full daylight adaptation reads 100 PB (Stevens ~cube-root).
+function fmtBright(flux){
+  if(!perceived) return fmtLm(flux);
+  return Math.round(100*Math.cbrt(Math.max(0,flux)/683)) + ' PB';
+}
 
 /* ---------- probe + diagram view ---------- */
 let probeC = D65.slice();   // chromaticity under the cursor (defaults to D65)
@@ -824,9 +866,11 @@ function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;
 
 function updateModeNote(){
   const el=document.getElementById('modeNote');
-  el.innerHTML = mixMode==='beam'
+  let s = mixMode==='beam'
     ? 'Beam-corrected: required watts scale with spot area (Ø at distance)² — a fatter or faster-diverging line needs more power for the same apparent brightness.'
     : 'Raw power: assumes identical beams. Switch to Beam-corrected to weight required watts by each laser’s diameter &amp; divergence.';
+  if(perceived) s += ' <b>Perceived</b>: brightness uses a mesopic (dark-adapted) curve plus cube-root compression — an approximation shown as a relative index (PB), not lumens.';
+  el.innerHTML = s;
 }
 function updateHalo(){
   const note=document.getElementById('haloNote');
@@ -876,7 +920,7 @@ function renderProbe(){
   active.forEach((l,i)=>{ const aw=(powers?powers[i]:0)*P.geom[i]; if(aw>1e-4) parts.push(`<span class="pm"><b>${l.wl}</b> ${aw.toFixed(2)}W</span>`); });
   verdict.textContent = isD65 ? 'D65 white ✓' : 'In gamut ✓'; verdict.className='verdict ok';
   detail.textContent='Max brightness here, and the power mix to make it:';
-  lmEl.textContent = fmtLm(bright);
+  lmEl.textContent = fmtBright(bright);
   mixEl.innerHTML = parts.join('');
 }
 
@@ -909,7 +953,7 @@ function brightRamp(t){ // 0..1 → dark → teal → warm-white
 function prepActive(active){
   const n=active.length, P={n,X:[],Y:[],S:[],geom:[],cap:[],w:[]};
   active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
-    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*c[1]*scatter(l.wl)); });
+    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
   return P;
 }
 // TRUE max-brightness at chromaticity C: an LP — maximise apparent brightness Σ wᵢ·Wᵢ
@@ -967,7 +1011,7 @@ function computeBrightField(){
   const P={ n, X:[],Y:[],S:[], geom:[], cap:[], w:[], A0:new Array(n),A1:new Array(n),A2:new Array(n),
             AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
   active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
-    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*c[1]*scatter(l.wl)); });
+    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*lumWeight(l.wl)*scatter(l.wl)); });
   const exact = n<=6;   // exact vertex-enumeration LP for typical designs; PG approximation for large sets
   const field=new Float64Array(GW*GH); let fmax=1e-9;
   for(let gy=0; gy<GH; gy++){
@@ -981,8 +1025,10 @@ function computeBrightField(){
   }
   const off=document.createElement('canvas'); off.width=GW; off.height=GH;
   const octx=off.getContext('2d'); const img=octx.createImageData(GW,GH); const d=img.data;
+  const fnorm = perceived ? Math.cbrt(fmax) : fmax;   // compress the ramp in perceived mode
   for(let i=0;i<GW*GH;i++){ const b=field[i]; if(b<=0){ d[i*4+3]=0; continue; }
-    const rgb=brightRamp(b/fmax); d[i*4]=rgb[0]; d[i*4+1]=rgb[1]; d[i*4+2]=rgb[2]; d[i*4+3]=245; }
+    const t = (perceived ? Math.cbrt(b) : b)/fnorm;
+    const rgb=brightRamp(t); d[i*4]=rgb[0]; d[i*4+1]=rgb[1]; d[i*4+2]=rgb[2]; d[i*4+3]=245; }
   octx.putImageData(img,0,0); brightCanvas=off;
 }
 
@@ -1014,7 +1060,9 @@ function renderRail(sol, hull, powerById, totalP){
     const pctMax = (l.on && cap>0) ? Math.min(100, actualW/cap*100) : 0;
     const lumens = l.on ? apparentLm(l.wl, actualW) : 0;
     const isLimit = l.on && l.id===limitId;
-    const valHtml = l.on ? `${actualW.toFixed(2)} W<span class="w"> · ${fmtLm(lumens)}</span>` : '—';
+    const valHtml = l.on
+      ? (perceived ? `${actualW.toFixed(2)} W` : `${actualW.toFixed(2)} W<span class="w"> · ${fmtLm(lumens)}</span>`)
+      : '—';
     const spot = spotDia(l);
     const spotHtml = (mixMode==='beam' && z>0)
       ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
@@ -1049,7 +1097,7 @@ function renderRail(sol, hull, powerById, totalP){
   const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
   const beamNote=document.getElementById('beamNote');
   if(active.length>=2 && kMax>0){
-    setTxt('outLumens', fmtLm(totalLm));
+    setTxt('outLumens', fmtBright(totalLm));
     setTxt('outLimit', limitL ? `${limitL.wl} nm` : '—');
     setTxt('outPower', totalW.toFixed(2)+' W');
     setTxt('outEff', totalW>0 ? Math.round(totalLm/totalW)+' lm/W' : '—');
@@ -1155,6 +1203,19 @@ document.querySelectorAll('.medium-toggle button').forEach(b=>{
     recompute();
   });
 });
+function updateAdaptLabel(){
+  const a=darkAdapt(), regime = a<0.2?'photopic' : a<0.8?'mesopic' : 'scotopic';
+  const el=document.getElementById('adaptVal'); if(el) el.textContent = Math.round(a*100)+'% · '+regime;
+}
+document.querySelectorAll('.metric-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    perceived = b.dataset.metric==='perceived';
+    document.querySelectorAll('.metric-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    document.getElementById('adaptField').classList.toggle('hidden', !perceived);
+    updateAdaptLabel(); recompute();
+  });
+});
+document.getElementById('darkAdapt').addEventListener('input', ()=>{ updateAdaptLabel(); recompute(); });
 document.querySelectorAll('.view-toggle button').forEach(b=>{
   b.addEventListener('click', ()=>{
     viewMode=b.dataset.view;
@@ -1300,6 +1361,7 @@ let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(
 
 populateCatalog();
 setActivePreset('rgbDiode');
+updateAdaptLabel();
 setupCanvas();
 recompute();
 </script>
