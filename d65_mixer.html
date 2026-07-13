@@ -291,7 +291,7 @@
   <header class="top">
     <div class="eyebrow">Aerial Beam Color Design · CIE 1931</div>
     <h1>Laser Projector Design Tool</h1>
-    <p>Design a multi-color laser projector: pick real lasers (Coherent OPSL, diode, DPSS), blend them to D65 white on the CIE 1931 diagram, see the reproducible gamut, and size the optical power and luminous output for a neutral white beam. <a class="link" href="research.html" target="_blank" rel="noopener">↗ Color &amp; hardware research brief</a></p>
+    <p>Design a multi-color laser projector for aerial beams: pick real lasers (Coherent OPSL, diode, DPSS), then hover the CIE 1931 diagram to read any color’s <b>perceived brightness</b> and the power mix to make it, and see the gamut your primaries reproduce. <a class="link" href="research.html" target="_blank" rel="noopener">↗ Color &amp; hardware research brief</a></p>
   </header>
 
   <div class="layout">
@@ -326,17 +326,6 @@
         <div class="probe-mix mono" id="probeMix"></div>
       </div>
 
-      <div class="card section" id="beamCard">
-        <h2>White Beam Output <span class="pill">at max power</span></h2>
-        <div class="readout-grid">
-          <div class="ro"><span class="k">Beam brightness</span><span class="v mono" id="outLumens">—</span></div>
-          <div class="ro"><span class="k">Limiting laser</span><span class="v mono" id="outLimit">—</span></div>
-          <div class="ro"><span class="k">Total optical power</span><span class="v mono" id="outPower">—</span></div>
-          <div class="ro"><span class="k">Efficiency</span><span class="v mono" id="outEff">—</span></div>
-        </div>
-        <div class="mode-note" id="beamNote" style="margin-top:12px;">Each line scales up until the <b>limiting laser</b> hits its max power (set <span class="mono">max W</span> per laser). Brightness weights radiant watts by eye response and the viewing medium — where the gamut triangle can't.</div>
-      </div>
-
       <div class="card section">
         <h2>Laser Primaries <span class="pill" id="countPill">0</span></h2>
         <div class="preset-row">
@@ -356,17 +345,13 @@
             <button data-medium="fog" class="active">Fog</button>
             <button data-medium="haze">Haze</button>
           </div>
-          <div class="mode-toggle metric-toggle" role="tablist" title="Photometric lumens vs perceived brightness">
-            <button data-metric="photometric" class="active">Photometric</button>
-            <button data-metric="perceived">Perceived</button>
-          </div>
           <div class="ctrl-fields">
             <div class="ctrl-field">
               <label for="viewDist">Viewing distance</label>
               <div class="fld-in"><input id="viewDist" type="number" min="0" step="1" value="10"><span class="u">m</span></div>
             </div>
           </div>
-          <div class="adapt-field hidden" id="adaptField">
+          <div class="adapt-field" id="adaptField">
             <label for="darkAdapt">Dark adaptation <span class="mono" id="adaptVal"></span></label>
             <input id="darkAdapt" type="range" min="0" max="100" step="1" value="60">
           </div>
@@ -413,7 +398,7 @@
   </div>
 
   <p class="foot">
-    Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the blend is solved as non-negative powers landing the combined chromaticity on D65. The gamut is the convex hull of the primaries. <b>Beam Output</b> scales the blend up until one laser hits its <span class="mono">max W</span>, then reports luminous output (Φ = 683·V(λ)·W, summed) — the brightness the flat gamut can't show. In <b>beam-corrected</b> mode required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)², shifting which line is limiting but never the on-axis white point. Coherent OPSL specs are from published datasheets; diode/DPSS and multimode figures are representative estimates. Beams are assumed co-aligned with spectrally neutral scattering. See the <a class="link" href="research.html" target="_blank" rel="noopener">color &amp; hardware research brief</a> for how show software (Pangolin BEYOND, Lasergraph DSP) drives multi-color projectors.
+    Mixing sums CIE 1931 2° tristimulus values of each monochromatic line; the gamut is the convex hull of the primaries. The <b>Color Probe</b> solves the non-negative powers that reproduce the hovered color at maximum brightness. <b>Perceived brightness</b> (PB) weights radiant watts by a mesopic luminous-efficiency curve — the photopic V(λ) blended toward scotopic V′(λ) as dark adaptation rises (the Purkinje shift) — plus a cube-root compression; it's a relative index, not lumens, anchored so 1 W of 555 nm at daylight adaptation ≈ 100 PB. In <b>beam-corrected</b> mode required watts scale with each beam's spot area at the viewing distance (Ø = diameter + distance × divergence)². Per-laser watts are the neutral-white balance; the ·max line is the limiting laser. Coherent OPSL specs are from datasheets; diode/DPSS and multimode figures are estimates. Beams assumed co-aligned. See the <a class="link" href="research.html" target="_blank" rel="noopener">color &amp; hardware research brief</a> for how show software (Pangolin BEYOND, Lasergraph DSP) drives multi-color projectors.
   </p>
 </div>
 
@@ -683,7 +668,7 @@ function scatter(wl){
 }
 
 /* ---------- perceived brightness (mesopic + compression) ---------- */
-let perceived = false;   // false = photometric lumens, true = perceived-brightness model
+let perceived = true;    // the tool's only brightness metric: perceived (mesopic + compressed)
 function darkAdapt(){ return Math.max(0, Math.min(1, (parseFloat((document.getElementById('darkAdapt')||{}).value)||0)/100)); }
 // Luminous-efficiency weight: photopic V(λ), or a mesopic blend toward scotopic V'(λ)
 // as dark adaptation rises (the Purkinje shift toward ~507 nm).
@@ -1035,10 +1020,9 @@ function computeBrightField(){
 function renderRail(sol, hull, powerById, totalP){
   const nActive = activeLasers().length;
   document.getElementById('countPill').textContent = `${nActive} on · ${lasers.length}`;
-  const dist = sol.dist;   // how close the D65-white build actually lands
 
-  // White build: relative required radiant watts (on-axis amount × geometry), then
-  // scale the whole set up until the first laser reaches its max power.
+  // Per-laser white-balance power: scale the D65 mix up until one laser hits its max
+  // (the ·max limiting line). This is the neutral-white power spec per laser.
   const active = lasers.filter(l=>l.on);
   const reqW = {};
   active.forEach(l=> reqW[l.id] = (powerById[l.id]||0)*geomFactor(l));
@@ -1048,8 +1032,6 @@ function renderRail(sol, hull, powerById, totalP){
     if(need > 1e-9){ const k = cap/need; if(k < kMax){ kMax = k; limitId = l.id; } }
   });
   if(!isFinite(kMax)) kMax = 0;
-  let totalLm = 0, totalW = 0;
-  active.forEach(l=>{ const aw = kMax*reqW[l.id]; totalW += aw; totalLm += apparentLm(l.wl, aw); });
   const z = viewDistM();
 
   laserList.innerHTML='';
@@ -1058,11 +1040,8 @@ function renderRail(sol, hull, powerById, totalP){
     const actualW = l.on ? kMax*reqW[l.id] : 0;
     const cap = l.pmax||0;
     const pctMax = (l.on && cap>0) ? Math.min(100, actualW/cap*100) : 0;
-    const lumens = l.on ? apparentLm(l.wl, actualW) : 0;
     const isLimit = l.on && l.id===limitId;
-    const valHtml = l.on
-      ? (perceived ? `${actualW.toFixed(2)} W` : `${actualW.toFixed(2)} W<span class="w"> · ${fmtLm(lumens)}</span>`)
-      : '—';
+    const valHtml = l.on ? `${actualW.toFixed(2)} W` : '—';
     const spot = spotDia(l);
     const spotHtml = (mixMode==='beam' && z>0)
       ? `<span class="spot-tag" title="beam Ø at ${z} m">Ø ${spot.toFixed(1)} mm @ ${z}m</span>`
@@ -1092,25 +1071,6 @@ function renderRail(sol, hull, powerById, totalP){
     laserList.appendChild(row);
   });
 
-  // Beam Output summary
-  const limitL = active.find(l=>l.id===limitId);
-  const setTxt=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
-  const beamNote=document.getElementById('beamNote');
-  if(active.length>=2 && kMax>0){
-    setTxt('outLumens', fmtBright(totalLm));
-    setTxt('outLimit', limitL ? `${limitL.wl} nm` : '—');
-    setTxt('outPower', totalW.toFixed(2)+' W');
-    setTxt('outEff', totalW>0 ? Math.round(totalLm/totalW)+' lm/W' : '—');
-    if(beamNote){
-      const white = dist<0.0045 ? `mixes to true D65 white (Δ ${dist.toFixed(4)})`
-                  : dist<0.02  ? `slightly off D65 (Δ ${dist.toFixed(3)}) — nudge a line for neutral white`
-                  : `cannot reach D65 (closest Δ ${dist.toFixed(3)}) — not a true white`;
-      beamNote.innerHTML = `Scaled until the <b>limiting laser</b> hits its max power; brightness weights watts by eye response and medium. This set ${white}.`;
-    }
-  } else {
-    ['outLumens','outLimit','outPower','outEff'].forEach(id=>setTxt(id,'—'));
-    if(beamNote) beamNote.textContent = 'Select at least two lasers to size a white beam.';
-  }
   renderHardware();
   renderProbe();
   updateHalo();
@@ -1207,14 +1167,6 @@ function updateAdaptLabel(){
   const a=darkAdapt(), regime = a<0.2?'photopic' : a<0.8?'mesopic' : 'scotopic';
   const el=document.getElementById('adaptVal'); if(el) el.textContent = Math.round(a*100)+'% · '+regime;
 }
-document.querySelectorAll('.metric-toggle button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    perceived = b.dataset.metric==='perceived';
-    document.querySelectorAll('.metric-toggle button').forEach(x=>x.classList.toggle('active', x===b));
-    document.getElementById('adaptField').classList.toggle('hidden', !perceived);
-    updateAdaptLabel(); recompute();
-  });
-});
 document.getElementById('darkAdapt').addEventListener('input', ()=>{ updateAdaptLabel(); recompute(); });
 document.querySelectorAll('.view-toggle button').forEach(b=>{
   b.addEventListener('click', ()=>{
