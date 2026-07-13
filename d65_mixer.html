@@ -332,10 +332,6 @@
   .profile-chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .profile-chip .x { color: var(--faint); font-size: 13px; line-height: 1; padding: 0 1px; }
   .profile-chip .x:hover { color: var(--bad); }
-  .profile-chip.shipped { border-style: dashed; border-color: var(--accent-dim); }
-  .profile-chip.shipped .tag { color: var(--accent); font-size: 9px; }
-  .prof-row.shipped { border-style: dashed; border-color: var(--accent-dim); }
-  .prof-row.shipped .pr-name { color: var(--accent); }
   .profile-empty { font-size: 11.5px; color: var(--faint); }
 
   /* Modal */
@@ -761,7 +757,12 @@ const BUILTIN_CATALOG = [
   {"name":"DPSS 532","brand":"Generic","type":"DPSS","mode":"STM","wl":532,"power_W":0.1,"diam":1.5,"diverg":1}
 ];
 const BUILTIN_CONFIGS = [
-  {"name":"Example: RGB diode (demo)","lasers":[{"name":"Diode 460","type":"Diode","mode":"MTM","wl":460,"diam":2.5,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"Diode 520","type":"Diode","mode":"MTM","wl":520,"diam":2,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"Diode 638","type":"Diode","mode":"MTM","wl":638,"diam":2,"diverg":1.2,"power_W":0.7,"pmax":0.7,"on":true}]}
+  {"name":"all diode RGB","lasers":[{"name":"Diode 405","type":"Diode","mode":"MTM","wl":405,"diam":2,"diverg":1.2,"power_W":0.3,"pmax":0.3,"on":false},{"name":"Diode 445","type":"Diode","mode":"MTM","wl":445,"diam":3,"diverg":1.5,"power_W":1.6,"pmax":1.6,"on":false},{"name":"Diode 460","type":"Diode","mode":"MTM","wl":460,"diam":2.5,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"DPSS 473","type":"DPSS","mode":"STM","wl":473,"diam":1.5,"diverg":1.2,"power_W":0.1,"pmax":0.1,"on":false},{"name":"Diode 520","type":"Diode","mode":"MTM","wl":520,"diam":2,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"DPSS 532","type":"DPSS","mode":"STM","wl":532,"diam":1.5,"diverg":1,"power_W":0.1,"pmax":0.1,"on":false},{"name":"Diode 638","type":"Diode","mode":"MTM","wl":638,"diam":2,"diverg":1.2,"power_W":0.7,"pmax":0.7,"on":true},{"name":"Diode 660","type":"Diode","mode":"MTM","wl":660,"diam":2,"diverg":1.2,"power_W":0.5,"pmax":0.5,"on":false}]},
+  {"name":"Zero CRI White 590","lasers":[{"name":"OPSL 460 MTM","type":"OPSL","mode":"MTM","wl":460,"diam":1.5,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 480 MTM","type":"OPSL","mode":"MTM","wl":480,"diam":1.6,"diverg":1.5,"power_W":4,"pmax":4,"on":false},{"name":"OPSL 488 MTM","type":"OPSL","mode":"MTM","wl":488,"diam":1.6,"diverg":1.5,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 514 MTM","type":"OPSL","mode":"MTM","wl":514,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 532 MTM","type":"OPSL","mode":"MTM","wl":532,"diam":1.8,"diverg":1.4,"power_W":8,"pmax":8,"on":false},{"name":"OPSL 561 MTM","type":"OPSL","mode":"MTM","wl":561,"diam":1.8,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 577 MTM","type":"OPSL","mode":"MTM","wl":577,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 590 MTM","type":"OPSL","mode":"MTM","wl":590,"diam":1.8,"diverg":1.4,"power_W":3,"pmax":3,"on":true},{"name":"OPSL 639 MTM","type":"OPSL","mode":"MTM","wl":639,"diam":1.5,"diverg":1.5,"power_W":5,"pmax":5,"on":false}]},
+  {"name":"Zero CRI White 577","lasers":[{"name":"OPSL 460 MTM","type":"OPSL","mode":"MTM","wl":460,"diam":1.5,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 480 MTM","type":"OPSL","mode":"MTM","wl":480,"diam":1.6,"diverg":1.5,"power_W":4,"pmax":4,"on":true},{"name":"OPSL 488 MTM","type":"OPSL","mode":"MTM","wl":488,"diam":1.6,"diverg":1.5,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 514 MTM","type":"OPSL","mode":"MTM","wl":514,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 532 MTM","type":"OPSL","mode":"MTM","wl":532,"diam":1.8,"diverg":1.4,"power_W":8,"pmax":8,"on":false},{"name":"OPSL 561 MTM","type":"OPSL","mode":"MTM","wl":561,"diam":1.8,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 577 MTM","type":"OPSL","mode":"MTM","wl":577,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 590 MTM","type":"OPSL","mode":"MTM","wl":590,"diam":1.8,"diverg":1.4,"power_W":3,"pmax":3,"on":false},{"name":"OPSL 639 MTM","type":"OPSL","mode":"MTM","wl":639,"diam":1.5,"diverg":1.5,"power_W":5,"pmax":5,"on":false}]},
+  {"name":"MTM RGBY","lasers":[{"name":"OPSL 460 MTM","type":"OPSL","mode":"MTM","wl":460,"diam":1.5,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 480 MTM","type":"OPSL","mode":"MTM","wl":480,"diam":1.6,"diverg":1.5,"power_W":4,"pmax":4,"on":false},{"name":"OPSL 488 MTM","type":"OPSL","mode":"MTM","wl":488,"diam":1.6,"diverg":1.5,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 514 MTM","type":"OPSL","mode":"MTM","wl":514,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 532 MTM","type":"OPSL","mode":"MTM","wl":532,"diam":1.8,"diverg":1.4,"power_W":8,"pmax":8,"on":true},{"name":"OPSL 561 MTM","type":"OPSL","mode":"MTM","wl":561,"diam":1.8,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 577 MTM","type":"OPSL","mode":"MTM","wl":577,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 590 MTM","type":"OPSL","mode":"MTM","wl":590,"diam":1.8,"diverg":1.4,"power_W":3,"pmax":3,"on":false},{"name":"OPSL 639 MTM","type":"OPSL","mode":"MTM","wl":639,"diam":1.5,"diverg":1.5,"power_W":5,"pmax":5,"on":true}]},
+  {"name":"MTM RGBBY","lasers":[{"name":"OPSL 460 MTM","type":"OPSL","mode":"MTM","wl":460,"diam":1.5,"diverg":1.4,"power_W":2,"pmax":2,"on":true},{"name":"OPSL 480 MTM","type":"OPSL","mode":"MTM","wl":480,"diam":1.6,"diverg":1.5,"power_W":4,"pmax":4,"on":false},{"name":"OPSL 488 MTM","type":"OPSL","mode":"MTM","wl":488,"diam":1.6,"diverg":1.5,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 514 MTM","type":"OPSL","mode":"MTM","wl":514,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 532 MTM","type":"OPSL","mode":"MTM","wl":532,"diam":1.8,"diverg":1.4,"power_W":8,"pmax":8,"on":true},{"name":"OPSL 561 MTM","type":"OPSL","mode":"MTM","wl":561,"diam":1.8,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 577 MTM","type":"OPSL","mode":"MTM","wl":577,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 590 MTM","type":"OPSL","mode":"MTM","wl":590,"diam":1.8,"diverg":1.4,"power_W":3,"pmax":3,"on":false},{"name":"OPSL 639 MTM","type":"OPSL","mode":"MTM","wl":639,"diam":1.5,"diverg":1.5,"power_W":5,"pmax":5,"on":true}]},
+  {"name":"MTM RGB","lasers":[{"name":"OPSL 460 MTM","type":"OPSL","mode":"MTM","wl":460,"diam":1.5,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 480 MTM","type":"OPSL","mode":"MTM","wl":480,"diam":1.6,"diverg":1.5,"power_W":4,"pmax":4,"on":false},{"name":"OPSL 488 MTM","type":"OPSL","mode":"MTM","wl":488,"diam":1.6,"diverg":1.5,"power_W":5,"pmax":5,"on":true},{"name":"OPSL 514 MTM","type":"OPSL","mode":"MTM","wl":514,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 532 MTM","type":"OPSL","mode":"MTM","wl":532,"diam":1.8,"diverg":1.4,"power_W":8,"pmax":8,"on":true},{"name":"OPSL 561 MTM","type":"OPSL","mode":"MTM","wl":561,"diam":1.8,"diverg":1.4,"power_W":2,"pmax":2,"on":false},{"name":"OPSL 577 MTM","type":"OPSL","mode":"MTM","wl":577,"diam":1.8,"diverg":1.4,"power_W":5,"pmax":5,"on":false},{"name":"OPSL 590 MTM","type":"OPSL","mode":"MTM","wl":590,"diam":1.8,"diverg":1.4,"power_W":3,"pmax":3,"on":false},{"name":"OPSL 639 MTM","type":"OPSL","mode":"MTM","wl":639,"diam":1.5,"diverg":1.5,"power_W":5,"pmax":5,"on":true}]}
 ];
 /* @end:gen */
 
@@ -771,7 +772,7 @@ const BUILTIN_CONFIGS = [
    those files, no HTML editing. When the fetch fails (opened via file://, or files absent)
    the embedded BUILTIN_* copies above are used, so the single file still works standalone. */
 let DEFAULT_CATALOG = BUILTIN_CATALOG;   // resolved to catalog.json (if fetched) in boot()
-let SHIPPED_CONFIGS = BUILTIN_CONFIGS;   // resolved to configs.json (if fetched) in boot()
+let DEFAULT_SETUPS = BUILTIN_CONFIGS;   // resolved to configs.json (if fetched) in boot(); seeded once into user profiles
 async function fetchJSON(path){
   try{ const r = await fetch(path, {cache:'no-store'}); if(!r.ok) return null; return await r.json(); }
   catch(e){ return null; }   // file:// or missing file → null → fall back to embedded
@@ -855,7 +856,25 @@ function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || (a.mode==='STM'?0:1)-(
 
 /* ---------- saved profiles (full laser setups incl. tuned powers) ---------- */
 const LS_PROFILES = 'd65_profiles_v1';
+const LS_SEEDED = 'd65_profiles_seeded_v1';   // set once after DEFAULT_SETUPS are merged in
 let profiles = [];   // assigned in boot()
+// Seed the shipped default setups into the user's editable profiles exactly once.
+// Merge by name so existing users keep their own and don't get duplicates; users may edit/delete freely afterward.
+function seedDefaultSetups(){
+  if(localStorage.getItem(LS_SEEDED)) return;
+  const have = new Set(profiles.map(p=>(p.name||'').trim().toLowerCase()));
+  let added=0;
+  (DEFAULT_SETUPS||[]).forEach(s=>{
+    if(!s||!s.name||!Array.isArray(s.lasers)) return;
+    const key=(s.name||'').trim().toLowerCase();
+    if(have.has(key)) return;
+    have.add(key);
+    profiles.push({ name:s.name, lasers:s.lasers.map(l=>({...l})) });
+    added++;
+  });
+  if(added) saveProfilesLS();
+  try{ localStorage.setItem(LS_SEEDED,'1'); }catch(e){}
+}
 function loadProfiles(){
   try{ const j=JSON.parse(localStorage.getItem(LS_PROFILES)); if(Array.isArray(j)) return j.filter(p=>p&&p.name&&Array.isArray(p.lasers)); }catch(e){}
   return [];
@@ -1571,14 +1590,6 @@ function renderProfiles(){
   const box=document.getElementById('profileChips'); if(!box) return;
   const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
   box.innerHTML='';
-  // Shipped "product" configs (read-only, from configs.json) come first, then the user's own.
-  SHIPPED_CONFIGS.forEach((p,i)=>{
-    const nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
-    const chip=document.createElement('span'); chip.className='profile-chip shipped'; chip.dataset.config=i;
-    chip.title=`${p.name} — provided configuration · ${nOn} laser${nOn===1?'':'s'} on · click to load`;
-    chip.innerHTML=`<span class="tag" title="provided configuration">◆</span><span class="nm">${escAttr(p.name)}</span>`;
-    box.appendChild(chip);
-  });
   profiles.forEach((p,i)=>{
     const nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
     const chip=document.createElement('span'); chip.className='profile-chip'; chip.dataset.load=i;
@@ -1586,7 +1597,7 @@ function renderProfiles(){
     chip.innerHTML=`<span class="nm">${escAttr(p.name)}</span><span class="x" data-del="${i}" title="Delete">×</span>`;
     box.appendChild(chip);
   });
-  if(!SHIPPED_CONFIGS.length && !profiles.length)
+  if(!profiles.length)
     box.innerHTML='<span class="profile-empty">No saved setups yet — tune your lasers, then “Save current”.</span>';
 }
 function saveCurrentProfile(){
@@ -1604,7 +1615,6 @@ function applySetup(snapLasers){
   sortLasers(); recompute();
 }
 function loadProfileByIndex(i){ const p=profiles[i]; if(p) applySetup(p.lasers); }
-function loadShippedConfig(i){ const p=SHIPPED_CONFIGS[i]; if(p) applySetup(p.lasers); }
 function deleteProfileByIndex(i){
   if(!profiles[i]) return;
   if(!window.confirm(`Delete saved setup “${profiles[i].name}”?`)) return;
@@ -1614,8 +1624,6 @@ document.getElementById('saveProfileBtn').addEventListener('click', saveCurrentP
 document.getElementById('profileChips').addEventListener('click', e=>{
   const del=e.target.closest('[data-del]');
   if(del){ e.stopPropagation(); deleteProfileByIndex(+del.dataset.del); return; }
-  const cfg=e.target.closest('[data-config]');
-  if(cfg){ loadShippedConfig(+cfg.dataset.config); return; }
   const chip=e.target.closest('[data-load]');
   if(chip) loadProfileByIndex(+chip.dataset.load);
 });
@@ -1667,18 +1675,8 @@ document.getElementById('dbImport').addEventListener('click', ()=>pickImport('ca
 function renderProfTable(){
   const box=document.getElementById('profTable'); if(!box) return;
   const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
-  if(!SHIPPED_CONFIGS.length && !profiles.length){ box.innerHTML='<p class="modal-note">No saved setups yet.</p>'; return; }
+  if(!profiles.length){ box.innerHTML='<p class="modal-note">No saved setups yet.</p>'; return; }
   box.innerHTML='';
-  // Read-only shipped "product" configs (from configs.json) first.
-  SHIPPED_CONFIGS.forEach((p,i)=>{
-    const n=(p.lasers||[]).length, nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
-    const row=document.createElement('div'); row.className='prof-row shipped';
-    row.innerHTML=`
-      <span class="pr-name">◆ ${escAttr(p.name)}</span>
-      <span class="pr-meta">${nOn}/${n} on · provided</span>
-      <button class="mini-btn" data-config="${i}">Load</button>`;
-    box.appendChild(row);
-  });
   profiles.forEach((p,i)=>{
     const n=(p.lasers||[]).length, nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
     const row=document.createElement('div'); row.className='prof-row';
@@ -1693,7 +1691,6 @@ function renderProfTable(){
 }
 document.getElementById('profTable').addEventListener('click', e=>{
   const load=e.target.closest('[data-load]'); if(load){ loadProfileByIndex(+load.dataset.load); return; }
-  const cfg=e.target.closest('[data-config]'); if(cfg){ loadShippedConfig(+cfg.dataset.config); return; }
   const exp=e.target.closest('[data-export]'); if(exp){ exportProfileByIndex(+exp.dataset.export); return; }
   const del=e.target.closest('[data-del]'); if(del){ deleteProfileByIndex(+del.dataset.del); }
 });
@@ -1835,7 +1832,7 @@ let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(
 (async function boot(){
   const [cat, cfg] = await Promise.all([fetchJSON('catalog.json'), fetchJSON('configs.json')]);
   if(Array.isArray(cat) && cat.length) DEFAULT_CATALOG = cat.map(normCat);
-  if(Array.isArray(cfg)) SHIPPED_CONFIGS = cfg
+  if(Array.isArray(cfg)) DEFAULT_SETUPS = cfg
     .filter(p => p && p.name && Array.isArray(p.lasers))
     .map(p => ({ name: String(p.name).slice(0,60), lasers: p.lasers }));
 
@@ -1844,6 +1841,7 @@ let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(
   // finalize a one-time migration from the legacy single-catalog store (persist + drop old key)
   if(localStorage.getItem(LS_CATALOG)!=null && dbState.list.length) saveDbState();
   profiles = loadProfiles();
+  seedDefaultSetups();   // one-time: merge shipped default setups into the user's editable profiles
   lasers = presetLasers('diodeDpss');   // default preset
   sortLasers();
 

@@ -1,10 +1,615 @@
 [
   {
-    "name": "Example: RGB diode (demo)",
+    "name": "all diode RGB",
     "lasers": [
-      { "name": "Diode 460", "type": "Diode", "mode": "MTM", "wl": 460, "diam": 2.5, "diverg": 1.5, "power_W": 1.0, "pmax": 1.0, "on": true },
-      { "name": "Diode 520", "type": "Diode", "mode": "MTM", "wl": 520, "diam": 2.0, "diverg": 1.5, "power_W": 1.0, "pmax": 1.0, "on": true },
-      { "name": "Diode 638", "type": "Diode", "mode": "MTM", "wl": 638, "diam": 2.0, "diverg": 1.2, "power_W": 0.7, "pmax": 0.7, "on": true }
+      {
+        "name": "Diode 405",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 405,
+        "diam": 2,
+        "diverg": 1.2,
+        "power_W": 0.3,
+        "pmax": 0.3,
+        "on": false
+      },
+      {
+        "name": "Diode 445",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 445,
+        "diam": 3,
+        "diverg": 1.5,
+        "power_W": 1.6,
+        "pmax": 1.6,
+        "on": false
+      },
+      {
+        "name": "Diode 460",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 2.5,
+        "diverg": 1.5,
+        "power_W": 1,
+        "pmax": 1,
+        "on": true
+      },
+      {
+        "name": "DPSS 473",
+        "type": "DPSS",
+        "mode": "STM",
+        "wl": 473,
+        "diam": 1.5,
+        "diverg": 1.2,
+        "power_W": 0.1,
+        "pmax": 0.1,
+        "on": false
+      },
+      {
+        "name": "Diode 520",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 520,
+        "diam": 2,
+        "diverg": 1.5,
+        "power_W": 1,
+        "pmax": 1,
+        "on": true
+      },
+      {
+        "name": "DPSS 532",
+        "type": "DPSS",
+        "mode": "STM",
+        "wl": 532,
+        "diam": 1.5,
+        "diverg": 1,
+        "power_W": 0.1,
+        "pmax": 0.1,
+        "on": false
+      },
+      {
+        "name": "Diode 638",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 638,
+        "diam": 2,
+        "diverg": 1.2,
+        "power_W": 0.7,
+        "pmax": 0.7,
+        "on": true
+      },
+      {
+        "name": "Diode 660",
+        "type": "Diode",
+        "mode": "MTM",
+        "wl": 660,
+        "diam": 2,
+        "diverg": 1.2,
+        "power_W": 0.5,
+        "pmax": 0.5,
+        "on": false
+      }
+    ]
+  },
+  {
+    "name": "Zero CRI White 590",
+    "lasers": [
+      {
+        "name": "OPSL 460 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 1.5,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 480 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 480,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 4,
+        "pmax": 4,
+        "on": false
+      },
+      {
+        "name": "OPSL 488 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 488,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 514 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 514,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 532 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 532,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 8,
+        "pmax": 8,
+        "on": false
+      },
+      {
+        "name": "OPSL 561 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 561,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 577 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 577,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 590 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 590,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 3,
+        "pmax": 3,
+        "on": true
+      },
+      {
+        "name": "OPSL 639 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 639,
+        "diam": 1.5,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      }
+    ]
+  },
+  {
+    "name": "Zero CRI White 577",
+    "lasers": [
+      {
+        "name": "OPSL 460 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 1.5,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 480 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 480,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 4,
+        "pmax": 4,
+        "on": true
+      },
+      {
+        "name": "OPSL 488 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 488,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 514 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 514,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 532 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 532,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 8,
+        "pmax": 8,
+        "on": false
+      },
+      {
+        "name": "OPSL 561 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 561,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 577 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 577,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 590 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 590,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 3,
+        "pmax": 3,
+        "on": false
+      },
+      {
+        "name": "OPSL 639 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 639,
+        "diam": 1.5,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      }
+    ]
+  },
+  {
+    "name": "MTM RGBY",
+    "lasers": [
+      {
+        "name": "OPSL 460 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 1.5,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 480 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 480,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 4,
+        "pmax": 4,
+        "on": false
+      },
+      {
+        "name": "OPSL 488 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 488,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 514 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 514,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 532 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 532,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 8,
+        "pmax": 8,
+        "on": true
+      },
+      {
+        "name": "OPSL 561 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 561,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 577 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 577,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 590 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 590,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 3,
+        "pmax": 3,
+        "on": false
+      },
+      {
+        "name": "OPSL 639 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 639,
+        "diam": 1.5,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      }
+    ]
+  },
+  {
+    "name": "MTM RGBBY",
+    "lasers": [
+      {
+        "name": "OPSL 460 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 1.5,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": true
+      },
+      {
+        "name": "OPSL 480 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 480,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 4,
+        "pmax": 4,
+        "on": false
+      },
+      {
+        "name": "OPSL 488 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 488,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 514 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 514,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 532 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 532,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 8,
+        "pmax": 8,
+        "on": true
+      },
+      {
+        "name": "OPSL 561 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 561,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 577 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 577,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 590 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 590,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 3,
+        "pmax": 3,
+        "on": false
+      },
+      {
+        "name": "OPSL 639 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 639,
+        "diam": 1.5,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      }
+    ]
+  },
+  {
+    "name": "MTM RGB",
+    "lasers": [
+      {
+        "name": "OPSL 460 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 460,
+        "diam": 1.5,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 480 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 480,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 4,
+        "pmax": 4,
+        "on": false
+      },
+      {
+        "name": "OPSL 488 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 488,
+        "diam": 1.6,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      },
+      {
+        "name": "OPSL 514 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 514,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 532 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 532,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 8,
+        "pmax": 8,
+        "on": true
+      },
+      {
+        "name": "OPSL 561 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 561,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 2,
+        "pmax": 2,
+        "on": false
+      },
+      {
+        "name": "OPSL 577 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 577,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 5,
+        "pmax": 5,
+        "on": false
+      },
+      {
+        "name": "OPSL 590 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 590,
+        "diam": 1.8,
+        "diverg": 1.4,
+        "power_W": 3,
+        "pmax": 3,
+        "on": false
+      },
+      {
+        "name": "OPSL 639 MTM",
+        "type": "OPSL",
+        "mode": "MTM",
+        "wl": 639,
+        "diam": 1.5,
+        "diverg": 1.5,
+        "power_W": 5,
+        "pmax": 5,
+        "on": true
+      }
     ]
   }
 ]

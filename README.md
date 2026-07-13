@@ -34,8 +34,8 @@ embedded in the HTML, so it always works standalone.
   Fog (Mie, neutral), or Haze.
 - **Presets & saved setups** — broad "preload" starting points (All diode + DPSS,
   All OPSL STM, All OPSL MTM); save / restore / export your own tuned setups
-  (per-setup or all, as JSON); and read-only "product" configurations shipped via
-  `configs.json`.
+  (per-setup or all, as JSON). Ships with default saved setups (from `configs.json`)
+  that are seeded into your editable list on first run — edit or delete them freely.
 - **Editable databases** — keep your own named laser databases in the browser; the
   built-in default is read-only. Export / import as JSON.
 
@@ -45,9 +45,9 @@ The base laser database and the shipped configurations live in two JSON files, s
 can deploy your own build **without editing the HTML**:
 
 - **`catalog.json`** — the base laser database (array of laser objects).
-- **`configs.json`** — read-only "product" configurations shown in the Saved area
-  (e.g. a manufacturer's per-product presets). An array of
-  `{ "name": "...", "lasers": [ ... ] }`.
+- **`configs.json`** — default saved setups seeded into each user's editable list on
+  first run (e.g. a manufacturer's per-product presets). Users can then edit or delete
+  them. An array of `{ "name": "...", "lasers": [ ... ] }`.
 
 Served over http(s), the tool fetches these at startup — so **replacing the JSON files
 is all a deployer needs to do.** Opened as a local `file://` (where browsers block
