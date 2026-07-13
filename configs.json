@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Example: RGB diode (demo)",
+    "lasers": [
+      { "name": "Diode 460", "type": "Diode", "mode": "MTM", "wl": 460, "diam": 2.5, "diverg": 1.5, "power_W": 1.0, "pmax": 1.0, "on": true },
+      { "name": "Diode 520", "type": "Diode", "mode": "MTM", "wl": 520, "diam": 2.0, "diverg": 1.5, "power_W": 1.0, "pmax": 1.0, "on": true },
+      { "name": "Diode 638", "type": "Diode", "mode": "MTM", "wl": 638, "diam": 2.0, "diverg": 1.2, "power_W": 0.7, "pmax": 0.7, "on": true }
+    ]
+  }
+]

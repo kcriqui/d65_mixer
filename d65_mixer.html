@@ -1,4 +1,5 @@
-<title>Laser Projector Design Tool</title>
+<meta charset="utf-8">
+<title>Laser Projector Wavelength Selection Tool</title>
 <style>
   :root {
     --bg: #0d0f14;
@@ -302,6 +303,10 @@
   .profile-chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .profile-chip .x { color: var(--faint); font-size: 13px; line-height: 1; padding: 0 1px; }
   .profile-chip .x:hover { color: var(--bad); }
+  .profile-chip.shipped { border-style: dashed; border-color: var(--accent-dim); }
+  .profile-chip.shipped .tag { color: var(--accent); font-size: 9px; }
+  .prof-row.shipped { border-style: dashed; border-color: var(--accent-dim); }
+  .prof-row.shipped .pr-name { color: var(--accent); }
   .profile-empty { font-size: 11.5px; color: var(--faint); }
 
   /* Modal */
@@ -363,9 +368,9 @@
 
 <div class="wrap">
   <header class="top">
-    <div class="eyebrow">Aerial Beam Color Design · CIE 1931</div>
-    <h1>Laser Projector Design Tool</h1>
-    <p>Design a multi-color laser projector for aerial beams: pick real lasers (Coherent OPSL, diode, DPSS), then hover the CIE 1931 diagram to read any color’s <b>perceived brightness</b> and the power mix to make it, and see the gamut your primaries reproduce. <a class="link" href="research.html" target="_blank" rel="noopener">↗ Color &amp; hardware research brief</a></p>
+    <div class="eyebrow">Color, Brightness &amp; Power · CIE 1931</div>
+    <h1>Laser Projector Wavelength Selection Tool</h1>
+    <p>Choose which laser wavelengths to run in a multi-color projector. Build a set from real lasers (Coherent OPSL, diode, DPSS) or your own editable database, then hover the CIE 1931 diagram to read any color’s <b>perceived brightness</b> and the exact per-laser power to make it. Shade the whole gamut by hue, achievable brightness, or the optical power each color costs — and weight it all for how the beam is seen: projected on a surface, or aerial through clear air, fog, or haze. <a class="link" href="research.html" target="_blank" rel="noopener">↗ Color &amp; hardware research brief</a></p>
   </header>
 
   <div class="layout">
@@ -411,6 +416,7 @@
         </div>
         <div class="mode-note" id="modeNote"></div>
       </div>
+      <div class="halo-note hidden" id="haloNote"></div>
     </div>
     </div>
 
@@ -439,11 +445,10 @@
           </span>
         </h2>
         <div class="preset-row">
-          <span class="preset-label">Preset</span>
-          <button class="preset-btn" data-preset="rgbDiode">RGB diode</button>
-          <button class="preset-btn" data-preset="rgbOPSL">RGB OPSL</button>
-          <button class="preset-btn" data-preset="allSTM">All STM</button>
-          <button class="preset-btn" data-preset="allMTM">All MTM</button>
+          <span class="preset-label">Preload</span>
+          <button class="preset-btn" data-preset="diodeDpss">All diode + DPSS</button>
+          <button class="preset-btn" data-preset="opslSTM">All OPSL STM</button>
+          <button class="preset-btn" data-preset="opslMTM">All OPSL MTM</button>
         </div>
         <div class="preset-row saved-row">
           <span class="preset-label">Saved</span>
@@ -453,7 +458,6 @@
         <div class="bank-hint">Click a laser to toggle it into the mix · <span class="mono">✎</span> to edit specs</div>
         <div id="laserList"></div>
         <div class="laser-total" id="laserTotal"></div>
-        <div class="halo-note hidden" id="haloNote"></div>
         <div class="add-row">
           <select class="catalog-select" id="catalogSelect"></select>
           <button class="add-btn" id="addBtn">+ Add</button>
@@ -678,41 +682,55 @@ function solveWhite(lasers, target){
    estimated beam). OPSL power is not tracked (varies by config). Diode/DPSS keep
    power (higher-power diodes combine multiple emitters → very different beams).
    diam = beam Ø at aperture (mm, 1/e²), diverg = full-angle (mrad). */
-const mk = (name,type,mode,wl,power_W,diam,diverg) =>
-  ({ name, brand: type==='OPSL' ? 'Coherent' : 'Generic', type, mode, wl, power_W, diam, diverg });
+/* @gen:data — BUILTIN_CATALOG + BUILTIN_CONFIGS are generated from catalog.json / configs.json
+   by build-data.mjs. Do NOT hand-edit between the markers; edit the JSON (or Export from the
+   app over it), then run:  node build-data.mjs
+   These are the embedded fallbacks used when the JSON can't be fetched (e.g. opened via file://). */
 const BUILTIN_CATALOG = [
-  // OPSL STM (single transverse mode / TEM00; red 607/639 = 1.5 mrad, M²<1.2)
-  mk("OPSL 460 STM","OPSL","STM",460, null, 1.0, 0.7),
-  mk("OPSL 480 STM","OPSL","STM",480, null, 1.0, 0.7),
-  mk("OPSL 488 STM","OPSL","STM",488, null, 1.0, 0.7),
-  mk("OPSL 514 STM","OPSL","STM",514, null, 1.0, 0.7),
-  mk("OPSL 532 STM","OPSL","STM",532, null, 1.0, 0.7),
-  mk("OPSL 561 STM","OPSL","STM",561, null, 1.0, 0.7),
-  mk("OPSL 577 STM","OPSL","STM",577, null, 1.0, 0.7),
-  mk("OPSL 590 STM","OPSL","STM",590, null, 1.0, 0.7),
-  mk("OPSL 607 STM","OPSL","STM",607, null, 1.0, 1.5),
-  mk("OPSL 639 STM","OPSL","STM",639, null, 1.0, 1.5),
-  // OPSL MTM (multi transverse mode; standard Taipan, M²<6) — beam figures estimated
-  mk("OPSL 460 MTM","OPSL","MTM",460, null, 1.5, 1.4),
-  mk("OPSL 480 MTM","OPSL","MTM",480, null, 1.6, 1.5),
-  mk("OPSL 488 MTM","OPSL","MTM",488, null, 1.6, 1.5),
-  mk("OPSL 514 MTM","OPSL","MTM",514, null, 1.8, 1.4),
-  mk("OPSL 532 MTM","OPSL","MTM",532, null, 1.8, 1.4),
-  mk("OPSL 561 MTM","OPSL","MTM",561, null, 1.8, 1.4),
-  mk("OPSL 577 MTM","OPSL","MTM",577, null, 1.8, 1.4),
-  mk("OPSL 590 MTM","OPSL","MTM",590, null, 1.8, 1.4),  // beam = 577 MTM
-  mk("OPSL 639 MTM","OPSL","MTM",639, null, 1.5, 1.5),
-  // Diode (generic, multi-mode/combined-emitter) — power tracked; beam estimated
-  mk("Diode 405","Diode","MTM",405, 0.3, 2.0, 1.2),
-  mk("Diode 445","Diode","MTM",445, 1.6, 3.0, 1.5),
-  mk("Diode 460","Diode","MTM",460, 1.0, 2.5, 1.5),
-  mk("Diode 520","Diode","MTM",520, 1.0, 2.0, 1.5),
-  mk("Diode 638","Diode","MTM",638, 0.7, 2.0, 1.2),
-  mk("Diode 660","Diode","MTM",660, 0.5, 2.0, 1.2),
-  // DPSS (generic, near-diffraction-limited) — beam figures estimated
-  mk("DPSS 473","DPSS","STM",473, 0.1, 1.5, 1.2),
-  mk("DPSS 532","DPSS","STM",532, 0.1, 1.5, 1.0),
+  {"name":"OPSL 460 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":460,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 480 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":480,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 488 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":488,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 514 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":514,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 532 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":532,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 561 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":561,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 577 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":577,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 590 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":590,"power_W":null,"diam":1,"diverg":0.7},
+  {"name":"OPSL 607 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":607,"power_W":null,"diam":1,"diverg":1.5},
+  {"name":"OPSL 639 STM","brand":"Coherent","type":"OPSL","mode":"STM","wl":639,"power_W":null,"diam":1,"diverg":1.5},
+  {"name":"OPSL 460 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":460,"power_W":null,"diam":1.5,"diverg":1.4},
+  {"name":"OPSL 480 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":480,"power_W":null,"diam":1.6,"diverg":1.5},
+  {"name":"OPSL 488 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":488,"power_W":null,"diam":1.6,"diverg":1.5},
+  {"name":"OPSL 514 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":514,"power_W":null,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 532 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":532,"power_W":null,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 561 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":561,"power_W":null,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 577 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":577,"power_W":null,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 590 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":590,"power_W":null,"diam":1.8,"diverg":1.4},
+  {"name":"OPSL 639 MTM","brand":"Coherent","type":"OPSL","mode":"MTM","wl":639,"power_W":null,"diam":1.5,"diverg":1.5},
+  {"name":"Diode 405","brand":"Generic","type":"Diode","mode":"MTM","wl":405,"power_W":0.3,"diam":2,"diverg":1.2},
+  {"name":"Diode 445","brand":"Generic","type":"Diode","mode":"MTM","wl":445,"power_W":1.6,"diam":3,"diverg":1.5},
+  {"name":"Diode 460","brand":"Generic","type":"Diode","mode":"MTM","wl":460,"power_W":1,"diam":2.5,"diverg":1.5},
+  {"name":"Diode 520","brand":"Generic","type":"Diode","mode":"MTM","wl":520,"power_W":1,"diam":2,"diverg":1.5},
+  {"name":"Diode 638","brand":"Generic","type":"Diode","mode":"MTM","wl":638,"power_W":0.7,"diam":2,"diverg":1.2},
+  {"name":"Diode 660","brand":"Generic","type":"Diode","mode":"MTM","wl":660,"power_W":0.5,"diam":2,"diverg":1.2},
+  {"name":"DPSS 473","brand":"Generic","type":"DPSS","mode":"STM","wl":473,"power_W":0.1,"diam":1.5,"diverg":1.2},
+  {"name":"DPSS 532","brand":"Generic","type":"DPSS","mode":"STM","wl":532,"power_W":0.1,"diam":1.5,"diverg":1}
 ];
+const BUILTIN_CONFIGS = [
+  {"name":"Example: RGB diode (demo)","lasers":[{"name":"Diode 460","type":"Diode","mode":"MTM","wl":460,"diam":2.5,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"Diode 520","type":"Diode","mode":"MTM","wl":520,"diam":2,"diverg":1.5,"power_W":1,"pmax":1,"on":true},{"name":"Diode 638","type":"Diode","mode":"MTM","wl":638,"diam":2,"diverg":1.2,"power_W":0.7,"pmax":0.7,"on":true}]}
+];
+/* @end:gen */
+
+/* ---------- runtime data source (external JSON with embedded fallback) ----------
+   The base catalog and the shipped "product" configs load from catalog.json / configs.json
+   at startup when the tool is served over http(s) — so a deployer customizes by replacing
+   those files, no HTML editing. When the fetch fails (opened via file://, or files absent)
+   the embedded BUILTIN_* copies above are used, so the single file still works standalone. */
+let DEFAULT_CATALOG = BUILTIN_CATALOG;   // resolved to catalog.json (if fetched) in boot()
+let SHIPPED_CONFIGS = BUILTIN_CONFIGS;   // resolved to configs.json (if fetched) in boot()
+async function fetchJSON(path){
+  try{ const r = await fetch(path, {cache:'no-store'}); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; }   // file:// or missing file → null → fall back to embedded
+}
 
 /* ---------- editable laser databases (named catalogs) ----------
    Everything is per-browser (localStorage) — no server, no accounts, so one user's
@@ -748,18 +766,15 @@ function loadDbState(){
   }catch(e){}
   return { activeId:'builtin', list:[] };
 }
-let dbState = loadDbState();
+let dbState;   // assigned in boot(), after external data resolves
 function saveDbState(){ try{ localStorage.setItem(LS_DBS, JSON.stringify(dbState)); localStorage.removeItem(LS_CATALOG); }catch(e){} }
 function activeDb(){ return dbState.list.find(d=>d.id===dbState.activeId) || null; }
 function isBuiltinActive(){ return !activeDb(); }
 function activeDbName(){ const d=activeDb(); return d ? d.name : 'Built-in default'; }
 // CATALOG always mirrors the active database (a live reference to its array, so edits
 // persist by mutating it + saveDbState). Built-in active → a throwaway clone (read-only).
-let CATALOG;
-function refreshCatalog(){ const d=activeDb(); CATALOG = d ? d.catalog : cloneCat(BUILTIN_CATALOG); }
-refreshCatalog();
-// finalize a one-time migration from the legacy single-catalog store (persist + drop old key)
-if(localStorage.getItem(LS_CATALOG)!=null && dbState.list.length) saveDbState();
+let CATALOG;   // mirrors the active database; built in boot() / refreshCatalog()
+function refreshCatalog(){ const d=activeDb(); CATALOG = d ? d.catalog : cloneCat(DEFAULT_CATALOG); }
 function saveCatalog(){ saveDbState(); }   // edits mutate CATALOG (= activeDb().catalog) in place
 function selectDb(id){ dbState.activeId = id; refreshCatalog(); saveDbState(); }
 
@@ -770,33 +785,32 @@ function instFromCatalog(cat, on){
            diam:cat.diam, diverg:cat.diverg, power_W:cat.power_W,
            pmax:(cat.power_W!=null ? cat.power_W : 1.0), on:!!on };
 }
-// Preset laser sets. rgb* are explicit name lists; all* are computed live from the
-// current catalog so they keep working after database edits.
-const PRESETS = {
-  rgbDiode: ["Diode 460","Diode 520","Diode 638"],
-  rgbOPSL:  ["OPSL 480 STM","OPSL 532 STM","OPSL 639 STM"],
-};
+// Built-in presets are broad "starting points" computed live from the active catalog
+// (user-specific configurations live in Saved setups). If the active database has none of
+// a category, fall back to the built-in default so a preset never loads empty.
+function presetFilter(cat, key){
+  if(key==='diodeDpss') return cat.filter(c=>c.type==='Diode'||c.type==='DPSS');
+  if(key==='opslSTM')   return cat.filter(c=>c.type==='OPSL'&&c.mode==='STM');
+  if(key==='opslMTM')   return cat.filter(c=>c.type==='OPSL'&&c.mode==='MTM');
+  return [];
+}
 function presetNames(key){
-  if(key==='allSTM') return CATALOG.filter(c=>c.type==='OPSL'&&c.mode==='STM').map(c=>c.name);
-  if(key==='allMTM') return CATALOG.filter(c=>c.type==='OPSL'&&c.mode==='MTM').map(c=>c.name);
-  return PRESETS[key]||[];
+  const active = presetFilter(CATALOG, key);
+  return (active.length ? active : presetFilter(DEFAULT_CATALOG, key)).map(c=>c.name);
 }
 function presetLasers(key){
-  // The rgb* presets name specific catalog entries; if the active database doesn't
-  // have them, fall back to the built-in default so the built-in presets always load.
   return presetNames(key)
-    .map(nm => CATALOG.find(c=>c.name===nm) || BUILTIN_CATALOG.find(c=>c.name===nm))
+    .map(nm => CATALOG.find(c=>c.name===nm) || DEFAULT_CATALOG.find(c=>c.name===nm))
     .filter(Boolean).map(c=>instFromCatalog(c,true));
 }
-let lasers = presetLasers('rgbDiode');   // default preset
+let lasers = [];   // built in boot() from the default preset
 const activeLasers = () => lasers.filter(l => l.on);
 // Sort by wavelength; same-wavelength lasers group together by name (deterministic).
 function sortLasers(){ lasers.sort((a,b)=> a.wl - b.wl || (a.mode==='STM'?0:1)-(b.mode==='STM'?0:1) || a.name.localeCompare(b.name)); }
-sortLasers();
 
 /* ---------- saved profiles (full laser setups incl. tuned powers) ---------- */
 const LS_PROFILES = 'd65_profiles_v1';
-let profiles = loadProfiles();
+let profiles = [];   // assigned in boot()
 function loadProfiles(){
   try{ const j=JSON.parse(localStorage.getItem(LS_PROFILES)); if(Array.isArray(j)) return j.filter(p=>p&&p.name&&Array.isArray(p.lasers)); }catch(e){}
   return [];
@@ -1387,8 +1401,15 @@ document.querySelectorAll('.preset-btn').forEach(b=>{
 function renderProfiles(){
   const box=document.getElementById('profileChips'); if(!box) return;
   const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
-  if(!profiles.length){ box.innerHTML='<span class="profile-empty">No saved setups yet — tune your lasers, then “Save current”.</span>'; return; }
   box.innerHTML='';
+  // Shipped "product" configs (read-only, from configs.json) come first, then the user's own.
+  SHIPPED_CONFIGS.forEach((p,i)=>{
+    const nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
+    const chip=document.createElement('span'); chip.className='profile-chip shipped'; chip.dataset.config=i;
+    chip.title=`${p.name} — provided configuration · ${nOn} laser${nOn===1?'':'s'} on · click to load`;
+    chip.innerHTML=`<span class="tag" title="provided configuration">◆</span><span class="nm">${escAttr(p.name)}</span>`;
+    box.appendChild(chip);
+  });
   profiles.forEach((p,i)=>{
     const nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
     const chip=document.createElement('span'); chip.className='profile-chip'; chip.dataset.load=i;
@@ -1396,6 +1417,8 @@ function renderProfiles(){
     chip.innerHTML=`<span class="nm">${escAttr(p.name)}</span><span class="x" data-del="${i}" title="Delete">×</span>`;
     box.appendChild(chip);
   });
+  if(!SHIPPED_CONFIGS.length && !profiles.length)
+    box.innerHTML='<span class="profile-empty">No saved setups yet — tune your lasers, then “Save current”.</span>';
 }
 function saveCurrentProfile(){
   const name=(window.prompt('Save current setup as:', 'Setup '+(profiles.length+1))||'').trim();
@@ -1406,12 +1429,13 @@ function saveCurrentProfile(){
   else profiles.push({name, lasers:snap});
   saveProfilesLS(); renderProfiles(); renderProfTable();
 }
-function loadProfileByIndex(i){
-  const p=profiles[i]; if(!p) return;
+function applySetup(snapLasers){
   clearPreset(); editingId=null;
-  lasers=lasersFromSnapshot(p.lasers);
+  lasers=lasersFromSnapshot(snapLasers);
   sortLasers(); recompute();
 }
+function loadProfileByIndex(i){ const p=profiles[i]; if(p) applySetup(p.lasers); }
+function loadShippedConfig(i){ const p=SHIPPED_CONFIGS[i]; if(p) applySetup(p.lasers); }
 function deleteProfileByIndex(i){
   if(!profiles[i]) return;
   if(!window.confirm(`Delete saved setup “${profiles[i].name}”?`)) return;
@@ -1421,6 +1445,8 @@ document.getElementById('saveProfileBtn').addEventListener('click', saveCurrentP
 document.getElementById('profileChips').addEventListener('click', e=>{
   const del=e.target.closest('[data-del]');
   if(del){ e.stopPropagation(); deleteProfileByIndex(+del.dataset.del); return; }
+  const cfg=e.target.closest('[data-config]');
+  if(cfg){ loadShippedConfig(+cfg.dataset.config); return; }
   const chip=e.target.closest('[data-load]');
   if(chip) loadProfileByIndex(+chip.dataset.load);
 });
@@ -1472,8 +1498,18 @@ document.getElementById('dbImport').addEventListener('click', ()=>pickImport('ca
 function renderProfTable(){
   const box=document.getElementById('profTable'); if(!box) return;
   const pill=document.getElementById('profCountPill'); if(pill) pill.textContent=String(profiles.length);
-  if(!profiles.length){ box.innerHTML='<p class="modal-note">No saved setups yet.</p>'; return; }
+  if(!SHIPPED_CONFIGS.length && !profiles.length){ box.innerHTML='<p class="modal-note">No saved setups yet.</p>'; return; }
   box.innerHTML='';
+  // Read-only shipped "product" configs (from configs.json) first.
+  SHIPPED_CONFIGS.forEach((p,i)=>{
+    const n=(p.lasers||[]).length, nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
+    const row=document.createElement('div'); row.className='prof-row shipped';
+    row.innerHTML=`
+      <span class="pr-name">◆ ${escAttr(p.name)}</span>
+      <span class="pr-meta">${nOn}/${n} on · provided</span>
+      <button class="mini-btn" data-config="${i}">Load</button>`;
+    box.appendChild(row);
+  });
   profiles.forEach((p,i)=>{
     const n=(p.lasers||[]).length, nOn=(p.lasers||[]).filter(l=>l.on!==false).length;
     const row=document.createElement('div'); row.className='prof-row';
@@ -1481,14 +1517,23 @@ function renderProfTable(){
       <span class="pr-name">${escAttr(p.name)}</span>
       <span class="pr-meta">${nOn}/${n} on</span>
       <button class="mini-btn" data-load="${i}">Load</button>
+      <button class="mini-btn" data-export="${i}" title="Export just this setup to share">⭳ Export</button>
       <button class="mini-btn warn" data-del="${i}">Delete</button>`;
     box.appendChild(row);
   });
 }
 document.getElementById('profTable').addEventListener('click', e=>{
   const load=e.target.closest('[data-load]'); if(load){ loadProfileByIndex(+load.dataset.load); return; }
+  const cfg=e.target.closest('[data-config]'); if(cfg){ loadShippedConfig(+cfg.dataset.config); return; }
+  const exp=e.target.closest('[data-export]'); if(exp){ exportProfileByIndex(+exp.dataset.export); return; }
   const del=e.target.closest('[data-del]'); if(del){ deleteProfileByIndex(+del.dataset.del); }
 });
+// Export a single saved setup as a one-element array so it imports via the normal path (merge).
+function exportProfileByIndex(i){
+  const p=profiles[i]; if(!p) return;
+  const slug=(p.name||'setup').replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'setup';
+  downloadJSON(`d65-setup-${slug}.json`, [p]);
+}
 
 const DB_TYPES=['OPSL','Diode','DPSS'], DB_MODES=['STM','MTM'];
 function renderDbSwitcher(){
@@ -1617,11 +1662,28 @@ mq.addEventListener && mq.addEventListener('change', ()=>recompute());
 new MutationObserver(()=>recompute()).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 let rt; window.addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>{ setupCanvas(); recompute(); }, 120); });
 
-populateCatalog();
-setActivePreset('rgbDiode');
-renderProfiles();
-updateMediumNote();
-updateAdaptLabel();
-setupCanvas();
-recompute();
+/* ---------- boot: resolve external data (catalog.json / configs.json), then build state ---------- */
+(async function boot(){
+  const [cat, cfg] = await Promise.all([fetchJSON('catalog.json'), fetchJSON('configs.json')]);
+  if(Array.isArray(cat) && cat.length) DEFAULT_CATALOG = cat.map(normCat);
+  if(Array.isArray(cfg)) SHIPPED_CONFIGS = cfg
+    .filter(p => p && p.name && Array.isArray(p.lasers))
+    .map(p => ({ name: String(p.name).slice(0,60), lasers: p.lasers }));
+
+  dbState = loadDbState();
+  refreshCatalog();
+  // finalize a one-time migration from the legacy single-catalog store (persist + drop old key)
+  if(localStorage.getItem(LS_CATALOG)!=null && dbState.list.length) saveDbState();
+  profiles = loadProfiles();
+  lasers = presetLasers('diodeDpss');   // default preset
+  sortLasers();
+
+  populateCatalog();
+  setActivePreset('diodeDpss');
+  renderProfiles();
+  updateMediumNote();
+  updateAdaptLabel();
+  setupCanvas();
+  recompute();
+})();
 </script>

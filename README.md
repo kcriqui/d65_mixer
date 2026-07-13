@@ -1,45 +1,83 @@
-# Laser Projector Design Tool
+# Laser Projector Wavelength Selection Tool
 
-An interactive CIE 1931 tool for designing multi-color laser projectors, aimed at
-aerial-beam rigs. Build a set of real lasers, find the blend that reads as perfect
-**D65 white**, see the color **gamut** those primaries reproduce, and size the
-optical power and **luminous output** for a neutral white beam.
+An interactive CIE 1931 tool for choosing which laser wavelengths to run in a
+multi-color projector. Build a set of real lasers, hover the chromaticity diagram to
+read any color's **perceived brightness** and the exact per-laser power to make it, and
+shade the whole gamut by hue, achievable brightness, or the optical power each color
+costs — weighted for how the beam is seen (on a surface, or aerial through clear air,
+fog, or haze).
 
 **▶ Live tool: https://kcriqui.github.io/d65_mixer/**
 **· 📄 Research brief: https://kcriqui.github.io/d65_mixer/research.html**
 
-It's a single self-contained `d65_mixer.html` — no build step, no external requests —
-so it runs anywhere you can open the file, including GitHub Pages. `research.html` is a
-companion brief on how show software (Pangolin BEYOND, Lasergraph DSP) drives 4+ color
-projectors and the beam color science behind the tool.
+It's a single self-contained `d65_mixer.html` — no build step, runs anywhere you can
+open the file. When served over http(s) it also loads `catalog.json` and `configs.json`
+(see **Deploying / customizing**); opened as a local file it falls back to copies
+embedded in the HTML, so it always works standalone.
 
 ## Features
 
-- **Real laser catalog** — Coherent OPSL (Genesis MX / Taipan) in STM and MTM
-  variants, plus generic diode and DPSS lines, each with wavelength and beam specs.
-  OPSL beam figures are from Coherent datasheets; diode/DPSS and multimode
-  divergence are representative estimates (flagged `est`).
-- **D65 white solver** — computes the non-negative optical powers that mix to the
-  D65 white point.
-- **Beam Output** — set each laser's max power; the blend scales up until one laser
-  (the limiting laser) hits its cap, then reports per-line watts, headroom, and
-  **luminous output** (lm, weighting radiant watts by the eye's response) plus total
-  lumens and lm/W efficiency — the brightness the gamut triangle can't show.
-- **Gamut** — convex hull of the primaries with Rec.709 / DCI-P3 / Rec.2020 coverage.
-- **Presets** — RGB diode, RGB OPSL, All STM, All MTM.
-- **Best-subset finder** — fewest lines to white, widest gamut, or the best 2-laser
-  pair (closest single pair to D65 when exact white isn't reachable).
-- **Beam-corrected power** — a Raw ⇄ Beam-corrected toggle that scales required
-  watts by each beam's spot area at a viewing distance
-  (Ø = diameter + distance × divergence), for direct-view / beam-show use, with a
-  colored-halo warning when spot sizes mismatch.
+- **Laser catalog** — Coherent OPSL (Genesis MX / Taipan) in STM (single-mode) and MTM
+  (multimode) variants, plus generic diode and DPSS lines, each with wavelength and beam
+  specs. Editable in-app (⚙ Database) and shippable as JSON.
+- **Color Probe** — hover the CIE 1931 diagram to read a color's perceived brightness
+  (bar) plus the per-laser power bars and total to reproduce it at maximum brightness.
+- **Three gamut views** — *Hue* (the reproducible gamut), *Brightness* (max achievable
+  brightness across the gamut), and *Power* (the optical watts each color costs vs the
+  installed power — so you can see that a "10 W" projector rarely emits its full rating).
+- **Perceived brightness** — a relative index (PB) from a mesopic luminous-efficiency
+  curve set by a dark-adaptation slider (photopic → scotopic, the Purkinje shift) plus
+  cube-root compression. Not lumens; a relative brightness index.
+- **Mix & Medium** — Raw ⇄ Beam-corrected power (watts scale with each beam's spot area
+  at a viewing distance, with a colored-halo warning on spot-size mismatch), and a
+  viewing medium: Graphics (surface, neutral), or aerial Clear air (Rayleigh ∝1/λ⁴),
+  Fog (Mie, neutral), or Haze.
+- **Presets & saved setups** — broad "preload" starting points (All diode + DPSS,
+  All OPSL STM, All OPSL MTM); save / restore / export your own tuned setups
+  (per-setup or all, as JSON); and read-only "product" configurations shipped via
+  `configs.json`.
+- **Editable databases** — keep your own named laser databases in the browser; the
+  built-in default is read-only. Export / import as JSON.
+
+## Deploying / customizing
+
+The base laser database and the shipped configurations live in two JSON files, so you
+can deploy your own build **without editing the HTML**:
+
+- **`catalog.json`** — the base laser database (array of laser objects).
+- **`configs.json`** — read-only "product" configurations shown in the Saved area
+  (e.g. a manufacturer's per-product presets). An array of
+  `{ "name": "...", "lasers": [ ... ] }`.
+
+Served over http(s), the tool fetches these at startup — so **replacing the JSON files
+is all a deployer needs to do.** Opened as a local `file://` (where browsers block
+`fetch`), or when the files are absent, it falls back to copies embedded in the HTML,
+so the single file still works.
+
+Keep the embedded fallbacks in sync after editing the JSON:
+
+```
+node build-data.mjs
+```
+
+That regenerates the `BUILTIN_CATALOG` / `BUILTIN_CONFIGS` blocks inside `d65_mixer.html`
+from the JSON. To preview JSON edits locally, serve the folder and open the localhost
+URL — opening the file directly via `file://` shows the last-built embedded copy, not
+your latest JSON:
+
+```
+python -m http.server 8000
+# then open http://localhost:8000/d65_mixer.html
+```
 
 ## The math
 
-Additive mixing sums CIE 1931 2° tristimulus values per monochromatic line; the
-gamut is the convex hull of the chromaticity points. Beam geometry never changes the
-on-axis white point — only the radiant watts needed to produce it, and hence which
-line is "limiting."
+Additive mixing sums CIE 1931 2° tristimulus values per monochromatic line; the gamut is
+the convex hull of the chromaticity points. The Color Probe solves the non-negative
+powers that reproduce a color at maximum brightness within each laser's power cap.
+Perceived brightness weights radiant watts by a mesopic luminous-efficiency curve plus a
+cube-root compression (a relative index, not lumens). Beam geometry never changes the
+on-axis chromaticity — only the radiant watts needed, and hence which line is limiting.
 
 ## Origin
 

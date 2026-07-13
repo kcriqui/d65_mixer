@@ -1,0 +1,272 @@
+[
+  {
+    "name": "OPSL 460 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 460,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 480 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 480,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 488 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 488,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 514 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 514,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 532 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 532,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 561 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 561,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 577 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 577,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 590 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 590,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 0.7
+  },
+  {
+    "name": "OPSL 607 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 607,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 1.5
+  },
+  {
+    "name": "OPSL 639 STM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "STM",
+    "wl": 639,
+    "power_W": null,
+    "diam": 1,
+    "diverg": 1.5
+  },
+  {
+    "name": "OPSL 460 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 460,
+    "power_W": null,
+    "diam": 1.5,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 480 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 480,
+    "power_W": null,
+    "diam": 1.6,
+    "diverg": 1.5
+  },
+  {
+    "name": "OPSL 488 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 488,
+    "power_W": null,
+    "diam": 1.6,
+    "diverg": 1.5
+  },
+  {
+    "name": "OPSL 514 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 514,
+    "power_W": null,
+    "diam": 1.8,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 532 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 532,
+    "power_W": null,
+    "diam": 1.8,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 561 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 561,
+    "power_W": null,
+    "diam": 1.8,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 577 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 577,
+    "power_W": null,
+    "diam": 1.8,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 590 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 590,
+    "power_W": null,
+    "diam": 1.8,
+    "diverg": 1.4
+  },
+  {
+    "name": "OPSL 639 MTM",
+    "brand": "Coherent",
+    "type": "OPSL",
+    "mode": "MTM",
+    "wl": 639,
+    "power_W": null,
+    "diam": 1.5,
+    "diverg": 1.5
+  },
+  {
+    "name": "Diode 405",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 405,
+    "power_W": 0.3,
+    "diam": 2,
+    "diverg": 1.2
+  },
+  {
+    "name": "Diode 445",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 445,
+    "power_W": 1.6,
+    "diam": 3,
+    "diverg": 1.5
+  },
+  {
+    "name": "Diode 460",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 460,
+    "power_W": 1,
+    "diam": 2.5,
+    "diverg": 1.5
+  },
+  {
+    "name": "Diode 520",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 520,
+    "power_W": 1,
+    "diam": 2,
+    "diverg": 1.5
+  },
+  {
+    "name": "Diode 638",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 638,
+    "power_W": 0.7,
+    "diam": 2,
+    "diverg": 1.2
+  },
+  {
+    "name": "Diode 660",
+    "brand": "Generic",
+    "type": "Diode",
+    "mode": "MTM",
+    "wl": 660,
+    "power_W": 0.5,
+    "diam": 2,
+    "diverg": 1.2
+  },
+  {
+    "name": "DPSS 473",
+    "brand": "Generic",
+    "type": "DPSS",
+    "mode": "STM",
+    "wl": 473,
+    "power_W": 0.1,
+    "diam": 1.5,
+    "diverg": 1.2
+  },
+  {
+    "name": "DPSS 532",
+    "brand": "Generic",
+    "type": "DPSS",
+    "mode": "STM",
+    "wl": 532,
+    "power_W": 0.1,
+    "diam": 1.5,
+    "diverg": 1
+  }
+]
