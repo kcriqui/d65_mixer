@@ -300,7 +300,7 @@
         <canvas id="cie" width="720" height="760"></canvas>
       </div>
       <div class="diagram-hint">
-        <span id="diagHint">◇ drag a laser point along the spectral edge · ● D65 · hover to probe a color · shaded = reproducible gamut</span>
+        <span id="diagHint">◆ laser primaries · ● D65 · hover inside the horseshoe to probe a color · shaded = reproducible gamut</span>
       </div>
     </div>
 
@@ -844,13 +844,21 @@ function updateHalo(){
 
 /* ---------- color probe (color under the cursor) ---------- */
 function renderProbe(){
-  const active = activeLasers(), C = probeC;
   const verdict=document.getElementById('probeVerdict'), detail=document.getElementById('probeDetail');
-  const isD65 = Math.abs(C[0]-D65[0])<1e-6 && Math.abs(C[1]-D65[1])<1e-6;
-  document.getElementById('probePill').textContent = isD65 ? 'D65 · white' : `x ${C[0].toFixed(3)} y ${C[1].toFixed(3)}`;
-  document.getElementById('probeXY').textContent = `x ${C[0].toFixed(4)}  y ${C[1].toFixed(4)}`;
-  document.getElementById('probeSwatch').style.background = chromaToCss(C[0], C[1]);
   const mixEl=document.getElementById('probeMix'), lmEl=document.getElementById('probeLm');
+  const xyEl=document.getElementById('probeXY'), swEl=document.getElementById('probeSwatch'), pillEl=document.getElementById('probePill');
+  const C = probeC;
+  // No colour under the cursor (hovering outside the CIE horseshoe).
+  if(!C){
+    pillEl.textContent='hover a color'; verdict.textContent='—'; verdict.className='verdict';
+    detail.textContent='Hover inside the CIE color area to read a color.';
+    xyEl.textContent='—'; lmEl.textContent='—'; mixEl.innerHTML=''; swEl.style.background='var(--panel-2)'; return;
+  }
+  const active = activeLasers();
+  const isD65 = Math.abs(C[0]-D65[0])<1e-6 && Math.abs(C[1]-D65[1])<1e-6;
+  pillEl.textContent = isD65 ? 'D65 · white' : `x ${C[0].toFixed(3)} y ${C[1].toFixed(3)}`;
+  xyEl.textContent = `x ${C[0].toFixed(4)}  y ${C[1].toFixed(4)}`;
+  swEl.style.background = chromaToCss(C[0], C[1]);
   if(active.length<1){
     verdict.textContent='—'; verdict.className='verdict';
     detail.textContent='Add lasers to explore reproducible colors.';
@@ -862,12 +870,10 @@ function renderProbe(){
     detail.textContent='These primaries cannot reproduce this color.';
     lmEl.textContent='—'; mixEl.innerHTML=''; return;
   }
-  const sol=solveWhite(active, C);
-  let k=Infinity;
-  active.forEach((l,i)=>{ const need=sol.powers[i]*geomFactor(l), cap=Math.max(1e-6,l.pmax||0); if(need>1e-9){const kk=cap/need; if(kk<k)k=kk;} });
-  if(!isFinite(k)) k=0;
-  let bright=0; const parts=[];
-  active.forEach((l,i)=>{ const aw=k*sol.powers[i]*geomFactor(l); bright+=apparentLm(l.wl,aw); if(aw>1e-4) parts.push(`<span class="pm"><b>${l.wl}</b> ${aw.toFixed(2)}W</span>`); });
+  const P=prepActive(active);
+  const {bright, powers}=maxBright(C, P, true);   // exact max-brightness LP
+  const parts=[];
+  active.forEach((l,i)=>{ const aw=(powers?powers[i]:0)*P.geom[i]; if(aw>1e-4) parts.push(`<span class="pm"><b>${l.wl}</b> ${aw.toFixed(2)}W</span>`); });
   verdict.textContent = isD65 ? 'D65 white ✓' : 'In gamut ✓'; verdict.className='verdict ok';
   detail.textContent='Max brightness here, and the power mix to make it:';
   lmEl.textContent = fmtLm(bright);
@@ -899,7 +905,46 @@ function brightRamp(t){ // 0..1 → dark → teal → warm-white
   const a=stops[i], b=stops[i+1];
   return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
 }
-function maxBrightAt(C, P){ // P = prepared arrays; returns apparent brightness at chromaticity C
+// Prepared per-laser arrays for the brightness solves.
+function prepActive(active){
+  const n=active.length, P={n,X:[],Y:[],S:[],geom:[],cap:[],w:[]};
+  active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
+    P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*c[1]*scatter(l.wl)); });
+  return P;
+}
+// TRUE max-brightness at chromaticity C: an LP — maximise apparent brightness Σ wᵢ·Wᵢ
+// subject to the two chromaticity equalities and 0 ≤ Wᵢ ≤ maxᵢ. With 2 equality
+// constraints every LP vertex has exactly 2 "free" variables and the rest at a bound,
+// so we enumerate vertices (choose the 2 free, others at 0 or cap) and keep the best.
+// Exact for any number of primaries. Returns {bright, powers} (powers = on-axis amounts aᵢ).
+function maxBright(C, P, wantPowers){
+  const n=P.n;
+  const e1=new Array(n),e2=new Array(n),c=new Array(n),ucap=new Array(n);
+  for(let i=0;i<n;i++){ const S=P.S[i]; e1[i]=P.X[i]-C[0]*S; e2[i]=P.Y[i]-C[1]*S; c[i]=P.w[i]*P.geom[i]; ucap[i]=P.cap[i]/P.geom[i]; }
+  let best=0, bp=-1,bq=-1,bmask=0,bothers=null,bap=0,baq=0;
+  for(let p=0;p<n;p++) for(let q=p+1;q<n;q++){
+    const det=e1[p]*e2[q]-e1[q]*e2[p];
+    if(Math.abs(det)<1e-12) continue;
+    const others=[]; for(let i=0;i<n;i++) if(i!==p&&i!==q) others.push(i);
+    const m=others.length;
+    for(let mask=0; mask<(1<<m); mask++){
+      let f1=0,f2=0,obj=0;
+      for(let b=0;b<m;b++){ if(mask>>b&1){ const idx=others[b]; f1+=ucap[idx]*e1[idx]; f2+=ucap[idx]*e2[idx]; obj+=ucap[idx]*c[idx]; } }
+      const apv=(-f1*e2[q]+e1[q]*f2)/det, aqv=(-e1[p]*f2+f1*e2[p])/det;
+      if(apv<-1e-9||apv>ucap[p]+1e-9||aqv<-1e-9||aqv>ucap[q]+1e-9) continue;
+      obj+=apv*c[p]+aqv*c[q];
+      if(obj>best){ best=obj; bp=p;bq=q;bmask=mask;bothers=others;bap=apv;baq=aqv; }
+    }
+  }
+  let powers=null;
+  if(wantPowers && best>0 && bothers){
+    powers=new Array(n).fill(0);
+    for(let b=0;b<bothers.length;b++){ if(bmask>>b&1) powers[bothers[b]]=ucap[bothers[b]]; }
+    powers[bp]=Math.max(0,bap); powers[bq]=Math.max(0,baq);
+  }
+  return { bright: best, powers };
+}
+function maxBrightAt(C, P){ // fast approximation for large primary counts; apparent brightness only
   const n=P.n, Wc=60, A0=P.A0, A1=P.A1, A2=P.A2;
   for(let i=0;i<n;i++){ const S=P.S[i]; A0[i]=Wc*(P.X[i]-C[0]*S); A1[i]=Wc*(P.Y[i]-C[1]*S); A2[i]=P.Y[i]; }
   const AtA=P.AtA, Atb=P.Atb;
@@ -923,13 +968,15 @@ function computeBrightField(){
             AtA:Array.from({length:n},()=>new Array(n)), Atb:new Array(n), Pw:new Array(n) };
   active.forEach(l=>{ const c=cmfAt(l.wl); P.X.push(c[0]); P.Y.push(c[1]); P.S.push(c[0]+c[1]+c[2]);
     P.geom.push(geomFactor(l)); P.cap.push(Math.max(1e-6,l.pmax||0)); P.w.push(683*c[1]*scatter(l.wl)); });
+  const exact = n<=6;   // exact vertex-enumeration LP for typical designs; PG approximation for large sets
   const field=new Float64Array(GW*GH); let fmax=1e-9;
   for(let gy=0; gy<GH; gy++){
     const y = Y_MAX - (gy+0.5)/GH*(Y_MAX-Y_MIN);
     for(let gx=0; gx<GW; gx++){
       const x = X_MIN + (gx+0.5)/GW*(X_MAX-X_MIN);
       if(!pointInPoly([x,y], hull)) continue;
-      const b=maxBrightAt([x,y], P); field[gy*GW+gx]=b; if(b>fmax) fmax=b;
+      const b = exact ? maxBright([x,y], P, false).bright : maxBrightAt([x,y], P);
+      field[gy*GW+gx]=b; if(b>fmax) fmax=b;
     }
   }
   const off=document.createElement('canvas'); off.width=GW; off.height=GH;
@@ -1225,49 +1272,25 @@ document.querySelectorAll('.find-btn').forEach(btn=>{
   });
 });
 
-/* drag points on canvas */
-let dragId=null;
+/* color probe on hover (lasers aren't tunable, so points aren't draggable) */
+const dragId = null;   // kept for draw()/heatmap guards; nothing is ever dragged
 function eventXY(e){
   const r=canvas.getBoundingClientRect();
   const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
   const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
   return [cx*(canvas.width/r.width), cy*(canvas.height/r.height)];
 }
-function nearestLaser(px,py){
-  let best=null, bd=18*DPR;
-  lasers.forEach(l=>{ const p=xyOfWavelength(l.wl); const d=Math.hypot(sx(p[0])-px, sy(p[1])-py); if(d<bd){bd=d; best=l;} });
-  return best;
-}
-function wlNearestTo(px,py){
-  // find wavelength whose locus point is closest to cursor
-  let best=550, bd=Infinity;
-  for(let wl=400; wl<=700; wl+=1){ const p=xyOfWavelength(wl); const d=Math.hypot(sx(p[0])-px, sy(p[1])-py); if(d<bd){bd=d; best=wl;} }
-  return best;
-}
-function onDown(e){
-  const [px,py]=eventXY(e); const l=nearestLaser(px,py);
-  if(l){ dragId=l.id; e.preventDefault(); recompute(); }
-}
-function onMove(e){
-  if(dragId==null) return; e.preventDefault();
-  const [px,py]=eventXY(e); const wl=wlNearestTo(px,py);
-  const l=lasers.find(x=>x.id===dragId); if(l && l.wl!==wl){ l.wl=wl; recompute(); }
-}
-function onUp(){ if(dragId!=null){ dragId=null; recompute(); } }
-canvas.addEventListener('mousedown', onDown);
-window.addEventListener('mousemove', onMove);
-window.addEventListener('mouseup', onUp);
-canvas.addEventListener('touchstart', onDown, {passive:false});
-canvas.addEventListener('touchmove', onMove, {passive:false});
-canvas.addEventListener('touchend', onUp);
-canvas.addEventListener('mousemove', e=>{
-  if(dragId!=null) return;
+function probeAt(e){
   const [px,py]=eventXY(e);
-  canvas.style.cursor = nearestLaser(px,py) ? 'grab' : 'crosshair';
-  probeC = [invX(px), invY(py)];
+  const c=[invX(px), invY(py)];
+  probeC = pointInPoly(c, LOCUS) ? c : null;   // only real colors inside the horseshoe
+  canvas.style.cursor = probeC ? 'crosshair' : 'default';
   renderProbe();
-  if(lastSol) draw(lastSol, lastHull);   // refresh the probe marker
-});
+  if(lastSol) draw(lastSol, lastHull);
+}
+canvas.addEventListener('mousemove', probeAt);
+canvas.addEventListener('mouseleave', ()=>{ probeC=D65.slice(); renderProbe(); if(lastSol) draw(lastSol, lastHull); });
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); probeAt(e); }, {passive:false});
 
 /* theme + resize */
 const mq = window.matchMedia('(prefers-color-scheme: dark)');
