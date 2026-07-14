@@ -263,6 +263,7 @@
   .pm-row.total .pm-fill { background: var(--accent); }
 
   /* Beam combining tile */
+  #combineCard { container-type: inline-size; }
   .combine-intro { margin: 0 0 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
   .combine-eff { display: flex; gap: 14px; margin-bottom: 12px; }
   .combine-eff label { font-size: 11.5px; color: var(--faint); display: inline-flex; align-items: center; gap: 5px; }
@@ -272,13 +273,21 @@
   .combine-apply input { accent-color: var(--accent); margin-right: 3px; vertical-align: -1px; }
   .combine-diagram { margin: 2px 0 14px; overflow-x: auto; }
   .combine-diagram svg { display: block; max-width: 100%; }
-  .csvg-wl { font-size: 9px; fill: #ccd2de; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .csvg-wl { font-size: 9px; fill: #fff; font-family: ui-monospace, Menlo, Consolas, monospace;
+    paint-order: stroke; stroke: rgba(0,0,0,0.6); stroke-width: 2px; stroke-linejoin: round; }
   .csvg-lbl { font-size: 8px; fill: #9aa2b4; letter-spacing: 0.03em; }
   .combine-steps { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
   .cstep { display: grid; grid-template-columns: 40px 74px 1fr; align-items: baseline; gap: 8px; font-size: 12px; }
   .cstep .cnum { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
   .cstep .cwl { font-weight: 650; font-variant-numeric: tabular-nums; }
   .cstep .cdesc { color: var(--muted); }
+  .cprod { font-size: 10.5px; color: var(--faint); padding-left: 122px; line-height: 1.5; margin-top: -2px; }
+  @container (max-width: 380px){ .cprod { padding-left: 48px; } }
+  .cprod a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--line-strong); }
+  .cprod a:hover { color: var(--text); }
+  .cprod .cprod-spec { font-variant-numeric: tabular-nums; opacity: 0.85; }
+  .cprod-legend { font-size: 10px; color: var(--faint); line-height: 1.5; margin-top: 4px; padding-top: 7px; border-top: 1px solid var(--line); }
+  .cprod-legend code { font-size: 9.5px; background: var(--panel-2); padding: 0 3px; border-radius: 3px; }
   .combine-thru-head { font-size: 11px; color: var(--faint); letter-spacing: 0.02em; margin-bottom: 6px; }
   .combine-thru-head:empty { display: none; }
   #combineThru .pm-row.cweak .pm-wl, #combineThru .pm-row.cweak .pm-val { color: var(--accent); font-weight: 650; }
@@ -1134,18 +1143,55 @@ function combineSVG(cascade, d65p){
   // combined-beam axis, each segment colored by the accumulated D65-balanced mix at that stage
   const bx=[28]; for(let i=1;i<=N-1;i++) bx.push(cx(i)); bx.push(outX);
   for(let k=0;k<N;k++) s+=`<line x1="${bx[k]}" y1="${axisY}" x2="${bx[k+1]}" y2="${axisY}" stroke="${mixCss(cascade.slice(0,k+1), wOf)}" stroke-width="3"/>`;
-  s+=`<path d="M${outX-8},${axisY-4} L${outX},${axisY} L${outX-8},${axisY+4}" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`;
   const base=cascade[0];
   s+=`<rect x="6" y="${axisY-bh/2}" width="${bw}" height="${bh}" rx="3" fill="${chromaOf(base)}"/>`;
-  s+=`<text x="21" y="${axisY-bh/2-4}" class="csvg-wl" text-anchor="middle">${base.wl}</text>`;
+  s+=`<text x="21" y="${axisY}" class="csvg-wl" text-anchor="middle" dominant-baseline="central">${base.wl}</text>`;
   for(let i=1;i<=N-1;i++){
     const add=cascade[i], x=cx(i);
     s+=`<line x1="${x}" y1="${srcY-bh/2}" x2="${x}" y2="${axisY}" stroke="${chromaOf(add)}" stroke-width="2"/>`;
     s+=`<line x1="${x-8}" y1="${axisY+8}" x2="${x+8}" y2="${axisY-8}" stroke="var(--accent)" stroke-width="2.5"/>`;
     s+=`<rect x="${x-bw/2}" y="${srcY-bh/2}" width="${bw}" height="${bh}" rx="3" fill="${chromaOf(add)}"/>`;
-    s+=`<text x="${x}" y="${srcY+bh/2+10}" class="csvg-wl" text-anchor="middle">${add.wl}</text>`;
+    s+=`<text x="${x}" y="${srcY}" class="csvg-wl" text-anchor="middle" dominant-baseline="central">${add.wl}</text>`;
   }
   return s+`</svg>`;
+}
+// Commercial edge dichroics for the prescribed cuts (compact subset of dichroics.json — the
+// fuller research reference). We suggest the nearest stock edge for each cut: a broadband
+// edge dichroic with per-edge part numbers (works for any reflected line), plus the
+// purpose-built combiner set when its line-specific edge lines up (higher %T/%R).
+const DICHROIC_SUGGEST = {
+  longpass: {   // added line is shorter than the on-axis set → transmit long, reflect short
+    broadband: { vendor:'Thorlabs', pre:'DMLP', edges:[425,490,505,550,567,605,650], t:90, r:90,
+      url:'https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=3313' },
+    combiner:  { vendor:'Newport', edges:[427,466,503,552,613,659], parts:['DCM10','DCM11','DCM12','DCM13','DCM14','DCM15'], t:95, r:98,
+      url:'https://www.newport.com/f/dichroic-laser-beam-combiners' }
+  },
+  shortpass: {  // added line is longer than the on-axis set → transmit short, reflect long
+    broadband: { vendor:'Thorlabs', pre:'DMSP', edges:[425,490,505,550,567,605,650], t:90, r:90,
+      url:'https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9240' },
+    combiner:  { vendor:'Edmund', edges:[400,450,500,550,600,650,700,750], t:85, r:97, family:'TECHSPEC SP edge',
+      url:'https://www.edmundoptics.com/f/dichroic-shortpass-filters/14198/' }
+  }
+};
+function nearestEdgeIdx(edges, target){
+  let bi=0, bd=Infinity;
+  edges.forEach((e,i)=>{ const d=Math.abs(e-target); if(d<bd){ bd=d; bi=i; } });
+  return bi;
+}
+// Suggest 1–2 real dichroics for a prescribed cut (type: 'longpass'|'shortpass', edge in nm).
+function suggestDichroic(type, edge){
+  const spec=DICHROIC_SUGGEST[type]; if(!spec) return [];
+  const out=[];
+  const bb=spec.broadband, bi=nearestEdgeIdx(bb.edges, edge), be=bb.edges[bi];
+  out.push({ name:`${bb.vendor} ${bb.pre}${be}`, spec:`${bb.t}/${bb.r}%`, url:bb.url,
+    title:`${bb.vendor} broadband ${type} dichroic, ${be} nm cut-on · ${bb.t}% transmit / ${bb.r}% reflect` });
+  const cb=spec.combiner, ci=nearestEdgeIdx(cb.edges, edge), ce=cb.edges[ci];
+  if(Math.abs(ce-edge)<=22){   // purpose-built part only when its line-specific edge lines up
+    const nm = cb.parts ? `${cb.vendor} ${cb.parts[ci]}` : `${cb.vendor} ${cb.family} @${ce}`;
+    out.push({ name:nm, spec:`${cb.t}/${cb.r}%`, url:cb.url,
+      title:`${cb.vendor} ${type} combiner, ${ce} nm edge · ${cb.t}% transmit / ${cb.r}% reflect` });
+  }
+  return out;
 }
 function updateCombine(){
   const stepsEl=document.getElementById('combineSteps'); if(!stepsEl) return;
@@ -1175,7 +1221,10 @@ function updateCombine(){
     const edge = Math.round((add.wl + (short?minOn:maxOn))/2);
     steps += `<div class="cstep"><span class="cnum">${p-1}</span><span class="cwl" style="color:${chromaOf(add)}">+ ${add.wl} nm</span>`
       + `<span class="cdesc">${type} @ ~${edge} nm${p===N?' · last, lowest loss':''}</span></div>`;
+    const sug=suggestDichroic(type, edge);
+    if(sug.length) steps += `<div class="cprod">↳ ${sug.map(s=>`<a href="${s.url}" target="_blank" rel="noopener" title="${escAttr(s.title)}">${s.name}</a> <span class="cprod-spec">${s.spec}</span>`).join(' · ')}</div>`;
   }
+  steps += `<div class="cprod-legend">↳ suggested stock dichroic per cut — transmit%/reflect%; broadband edge part, then a purpose-built combiner when its edge lines up. Fuller list in <code>dichroics.json</code>.</div>`;
   stepsEl.innerHTML=steps;
   const pbs=cascade.map(pbOfLaser), weakIdx=pbs.indexOf(Math.min(...pbs));
   head.textContent = applyCombined ? 'Delivered power (applied to mix)' : 'Delivered power (estimated)';
