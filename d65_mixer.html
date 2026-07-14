@@ -928,6 +928,7 @@ function fmtBright(flux){
 /* ---------- probe + diagram view ---------- */
 let probeC = D65.slice();   // chromaticity under the cursor (defaults to D65)
 let viewMode = 'hue';       // 'hue' | 'bright' | 'power'
+let probeRowH = 0;          // measured height of one .pm-row (for stable-height reserve)
 let lastSol = null, lastHull = [];   // cached for lightweight redraws (hover)
 
 /* ---------- canvas / rendering ---------- */
@@ -982,15 +983,18 @@ function draw(sol, hull){
   const lineCol = cssVar('--line-strong');
   ctx.clearRect(0,0,W,H);
 
-  // grid
-  ctx.strokeStyle = gridCol; ctx.lineWidth = 1*DPR; ctx.fillStyle = textCol;
-  ctx.font = `${11*DPR}px ui-monospace, monospace`;
-  for(let gx=0; gx<=0.7; gx+=0.1){ ctx.beginPath(); ctx.moveTo(sx(gx),sy(0)); ctx.lineTo(sx(gx),sy(Y_MAX)); ctx.stroke(); }
-  for(let gy=0; gy<=0.8; gy+=0.1){ ctx.beginPath(); ctx.moveTo(sx(0),sy(gy)); ctx.lineTo(sx(X_MAX),sy(gy)); ctx.stroke(); }
-  ctx.textAlign='center'; ctx.textBaseline='top';
-  for(let gx=0.1; gx<=0.7; gx+=0.1) ctx.fillText(gx.toFixed(1), sx(gx), sy(0)+3*DPR);
-  ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let gy=0.1; gy<=0.8; gy+=0.1) ctx.fillText(gy.toFixed(1), sx(0)-3*DPR, sy(gy));
+  // chromaticity grid — hue view only (the bright/power heatmaps would show it through
+  // the transparent out-of-gamut area, cluttering the plot)
+  if(viewMode!=='bright' && viewMode!=='power'){
+    ctx.strokeStyle = gridCol; ctx.lineWidth = 1*DPR; ctx.fillStyle = textCol;
+    ctx.font = `${13*DPR}px ui-monospace, monospace`;
+    for(let gx=0; gx<=0.7; gx+=0.1){ ctx.beginPath(); ctx.moveTo(sx(gx),sy(0)); ctx.lineTo(sx(gx),sy(Y_MAX)); ctx.stroke(); }
+    for(let gy=0; gy<=0.8; gy+=0.1){ ctx.beginPath(); ctx.moveTo(sx(0),sy(gy)); ctx.lineTo(sx(X_MAX),sy(gy)); ctx.stroke(); }
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(let gx=0.1; gx<=0.7; gx+=0.1) ctx.fillText(gx.toFixed(1), sx(gx), sy(0)+3*DPR);
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    for(let gy=0.1; gy<=0.8; gy+=0.1) ctx.fillText(gy.toFixed(1), sx(0)-3*DPR, sy(gy));
+  }
 
   // gamut fill: hue background, brightness heatmap, or total-power heatmap
   if(viewMode==='bright'){
@@ -1007,7 +1011,7 @@ function draw(sol, hull){
   ctx.closePath(); ctx.stroke();
 
   // wavelength ticks
-  ctx.fillStyle = textCol; ctx.font=`${10.5*DPR}px ui-monospace, monospace`;
+  ctx.fillStyle = textCol; ctx.font=`${13*DPR}px ui-monospace, monospace`;
   const ticks=[460,480,500,520,540,560,580,600,620,660];
   ticks.forEach(wl=>{
     const p=xyOfWavelength(wl); const cx=sx(p[0]),cy=sy(p[1]);
@@ -1015,7 +1019,7 @@ function draw(sol, hull){
     const nx=cx-sx(0.33), ny=cy-sy(0.33); const nl=Math.hypot(nx,ny)||1;
     ctx.beginPath(); ctx.arc(cx,cy,2.2*DPR,0,7); ctx.fill();
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(wl, cx+nx/nl*15*DPR, cy+ny/nl*15*DPR);
+    ctx.fillText(wl, cx+nx/nl*17*DPR, cy+ny/nl*17*DPR);
   });
 
   // laser gamut fill
@@ -1225,11 +1229,22 @@ function updateHalo(){
 }
 
 /* ---------- color probe (color under the cursor) ---------- */
+// Reserve a stable height for the power-mix block = one row per laser in the current set
+// (+ the Total row), so toggling lasers on/off doesn't resize the tile and shove the rail
+// below it. Uses a measured row height so it tracks font size / zoom.
+function reserveProbeMixHeight(mixEl){
+  const cap = lasers.length + 1;                 // every laser in the set + the Total row
+  if(cap <= 1){ mixEl.style.minHeight=''; return; }
+  const rowH = probeRowH || 17;                  // measured live below; fallback for first paint
+  const GAP = 6, TOTAL_EXTRA = 12;               // .probe-mix gap; Total row's border + padding
+  mixEl.style.minHeight = (cap*rowH + (cap-1)*GAP + TOTAL_EXTRA) + 'px';
+}
 function renderProbe(){
   const verdict=document.getElementById('probeVerdict'), detail=document.getElementById('probeDetail');
   const mixEl=document.getElementById('probeMix'), lmEl=document.getElementById('probeLm');
   const brightEl=document.getElementById('probeBright'), swEl=document.getElementById('probeSwatch'), pillEl=document.getElementById('probePill');
   const resetBright=()=>{ lmEl.textContent='—'; if(brightEl) brightEl.style.width='0%'; };
+  reserveProbeMixHeight(mixEl);   // hold the reserve across every branch, incl. the empty states
   const C = probeC;
   // No colour under the cursor (hovering outside the CIE horseshoe).
   if(!C){
@@ -1282,6 +1297,9 @@ function renderProbe(){
   const bfrac = maxFlux>0 ? Math.cbrt(bright/maxFlux) : 0;
   if(brightEl) brightEl.style.width = (Math.max(0,Math.min(1,bfrac))*100).toFixed(1)+'%';
   mixEl.innerHTML = parts.join('');
+  // Calibrate the reserve from a real rendered row (once heights are known).
+  const firstRow = mixEl.querySelector('.pm-row');
+  if(firstRow){ const h=firstRow.offsetHeight; if(h && h!==probeRowH){ probeRowH=h; reserveProbeMixHeight(mixEl); } }
 }
 
 /* ---------- brightness heatmap (max achievable brightness across the gamut) ---------- */
